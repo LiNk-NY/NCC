@@ -1,6 +1,10 @@
 ## Read NCC SAV datasets
 
+## source("https://bioconductor.org/biocLite.R")
+## BiocInstaller::biocLite("IRanges")
+
 library(haven)
+library(IRanges)
 
 dataList <- list.files("data", pattern = "\\.sav$", full.names = TRUE)
 names(dataList) <- gsub(".sav", "", basename(dataList), fixed = TRUE)
@@ -28,3 +32,25 @@ for (i in seq_along(dataList)) {
     names(dataList[[i]]) <- gsub(TimePoint[[i]], "", names(dataList[[i]]),
                                  ignore.case = TRUE)
 }
+
+endings <- IRanges::CharacterList(
+    Baseline = paste(c("YN$", "Y$", "YNY$"), collapse = "|"),
+    M12Scan = paste(c("YNY$", "Y$", "YY$", "CY$", "M12$"), collapse = "|"),
+    M1Scan = paste(c("YN1$", "1$", "Y1$", "C1$", "M1$"), collapse = "|"),
+    M6Scan = paste(c("YN6$", "6$", "Y6$", "C6$", "M6$"), collapse = "|"))
+
+newNames <- mapply(function(patterns, varnames) {
+    gsub(patterns, "", varnames, ignore.case = TRUE)
+}, patterns = endings, varnames = lapply(dataList, names))
+
+outersect <- function(x, y) {
+        sort(c(setdiff(x, y),
+               setdiff(y, x)))
+}
+
+unMatched <- Reduce(outersect, newNames)
+unMatched <- unMatched[103:length(unMatched)]
+
+library(stringdist)
+
+stringdist::stringdistmatrix(tolower(unMatched))
