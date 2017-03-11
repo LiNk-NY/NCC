@@ -5,6 +5,7 @@
 
 library(haven)
 library(IRanges)
+library(stringdist)
 
 dataList <- list.files("data", pattern = "\\.sav$", full.names = TRUE)
 names(dataList) <- gsub(".sav", "", basename(dataList), fixed = TRUE)
@@ -44,13 +45,22 @@ newNames <- mapply(function(patterns, varnames) {
 }, patterns = endings, varnames = lapply(dataList, names))
 
 outersect <- function(x, y) {
-        sort(c(setdiff(x, y),
-               setdiff(y, x)))
+        sort(c(setdiff(x, y), setdiff(y, x)))
 }
 
 unMatched <- Reduce(outersect, newNames)
 unMatched <- unMatched[103:length(unMatched)]
 
-library(stringdist)
+lvDist <- stringdistmatrix(tolower(unMatched), method = "lv")
+shortDist <- as.matrix(lvDist) == 1L | as.matrix(lvDist) == 2L
+validPairs <- reshape2::melt(shortDist)
+matIndex <- validPairs[validPairs[[3]], 1:2]
 
-stringdist::stringdistmatrix(tolower(unMatched))
+first <- apply(matIndex, 1, function(x) x[1] < x[2])
+closeIdx <- matIndex[first,]
+SimilarNames <- cbind.data.frame(first = unMatched[closeIdx[[1]]],
+                                 second = unMatched[closeIdx[[2]]])
+cbind.data.frame(SimilarNames, standard = c("ClusTran", "", "", "", "", "", "",
+                                            "Parench", "Parietal", "Temporal",
+                                            "Trans", "TransPar", "",
+                                            "TransSub", "TranVent"))
