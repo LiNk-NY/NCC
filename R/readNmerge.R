@@ -48,19 +48,31 @@ outersect <- function(x, y) {
         sort(c(setdiff(x, y), setdiff(y, x)))
 }
 
-unMatched <- Reduce(outersect, newNames)
-unMatched <- unMatched[103:length(unMatched)]
+unMatched0 <- Reduce(outersect, newNames)
 
-lvDist <- stringdistmatrix(tolower(unMatched), method = "lv")
+## Look at this list (includes coded variables, e.g., '2A2B1')
+do.call(cbind, split(unMatched0, c(TRUE, FALSE)))
+
+unmatched <- unMatched0[grepl("^[A-Z]", unMatched0, ignore.case = TRUE)]
+
+lvDist <- stringdistmatrix(tolower(unmatched), method = "lv")
 shortDist <- as.matrix(lvDist) == 1L | as.matrix(lvDist) == 2L
 validPairs <- reshape2::melt(shortDist)
 matIndex <- validPairs[validPairs[[3]], 1:2]
 
 first <- apply(matIndex, 1, function(x) x[1] < x[2])
 closeIdx <- matIndex[first,]
-SimilarNames <- cbind.data.frame(first = unMatched[closeIdx[[1]]],
-                                 second = unMatched[closeIdx[[2]]])
-cbind.data.frame(SimilarNames, standard = c("ClusTran", "", "", "", "", "", "",
-                                            "Parench", "Parietal", "Temporal",
-                                            "Trans", "TransPar", "",
-                                            "TransSub", "TranVent"))
+SimilarNames <- cbind.data.frame(first = unmatched[closeIdx[[1]]],
+                                 second = unmatched[closeIdx[[2]]],
+                                 stringsAsFactors = FALSE)
+SimilarNames[, "ncharfirst"] <- nchar(SimilarNames[[1]])
+SimilarNames[, "ncharsecond"] <- nchar(SimilarNames[[2]])
+
+## Decision data.frame from word pairs
+cbind.data.frame(SimilarNames, standard =
+ifelse(SimilarNames[["ncharfirst"]] > SimilarNames[["ncharsecond"]] &
+           nchar(SimilarNames[["first"]]) != nchar(SimilarNames[["second"]]),
+       SimilarNames[["first"]],
+       ifelse(nchar(SimilarNames[["first"]]) == nchar(SimilarNames[["second"]]),
+           NA_character_, SimilarNames[["second"]])),
+stringsAsFactors = FALSE)
