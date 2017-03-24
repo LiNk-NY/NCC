@@ -12,25 +12,35 @@ names(dataList) <- gsub(".sav", "", basename(dataList), fixed = TRUE)
 
 dataList <- lapply(dataList, read_spss)
 
-timeVaryingNames <- lapply(dataList,
-                           function(x)
-                               grep("^S[16Y]E|^BSE", x = names(x), value = TRUE))
+dataNames <- CharacterList(lapply(dataList, names))
 
-TimePoint <- vapply(timeVaryingNames,
+timeStampStart <- LogicalList(lapply(dataNames, function(x) {
+    grepl("^S[16Y]E|^BSE", x)
+}))
+
+timeVaryingNames <- dataNames[timeStampStart]
+
+timeStampEnd <- dataNames[!timeStampStart]
+
+timePoints <- vapply(timeVaryingNames,
                     function(nameList) {
                         TimeName <- sample(nameList, size = 1L)
                         substr(TimeName, 1, 3)
                     }, character(1L))
 
-stopifnot(identical(names(dataList), names(TimePoint)))
+stopifnot(identical(names(dataNames), names(timePoints)))
+stopifnot(identical(names(timeVaryingNames), names(timePoints)))
 
 for (i in seq_along(dataList)) {
-    dataList[[i]][["TIME"]] <- TimePoint[[i]]
     if ("filter_$" %in% names(dataList[[i]])) {
         dataList[[i]] <- dataList[[i]][, -(which(
             names(dataList[[i]]) == "filter_$"))]
     }
-    names(dataList[[i]]) <- gsub(TimePoint[[i]], "", names(dataList[[i]]),
+    dataList[[i]][["TIME"]] <- timePoints[[i]]
+}
+
+for (i in seq_along(timeVaryingNames)) {
+    timeVaryingNames[[i]] <- gsub(timePoints[[i]], "", timeVaryingNames[[i]],
                                  ignore.case = TRUE)
 }
 
