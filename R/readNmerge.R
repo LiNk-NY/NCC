@@ -104,3 +104,11 @@ closeNames[, "levDist"] <- stringdist(closeNames[["first"]],
 closeNames[which(closeNames[, "levDist"] == 3), "longer"] <- NA_integer_
 
 closeNames <- closeNames[complete.cases(closeNames), ]
+
+shorter <- closeNames[, "longer"] %% 2
+shorter[shorter == 0L] <- -1
+closeNames[, "shorter"] <- closeNames[["longer"]] + shorter
+
+## Fix rownames
+closeNames <- data.frame(closeNames, row.names = seq_len(nrow(closeNames)),
+                         stringsAsFactors = FALSE)
