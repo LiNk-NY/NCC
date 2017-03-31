@@ -25,6 +25,11 @@ for (i in seq_along(dataList)) {
     }
 }
 
+## Convenience function for getting the outersect
+outersect <- function(x, y) {
+    sort(c(setdiff(x, y), setdiff(y, x)))
+}
+
 dataNames <- CharacterList(lapply(dataList, names))
 
 timeStampStart <- LogicalList(lapply(dataNames, function(x) {
@@ -32,6 +37,9 @@ timeStampStart <- LogicalList(lapply(dataNames, function(x) {
 }))
 
 timeVaryingNames <- dataNames[timeStampStart]
+
+## Check all vars match across datasets
+stopifnot(!length(Reduce(outersect, timeVaryingNames)))
 
 timeStampEnd <- dataNames[!timeStampStart]
 
@@ -64,16 +72,10 @@ newNames <- mapply(function(patterns, varnames) {
     gsub(patterns, "", varnames, ignore.case = TRUE)
 }, patterns = endings, varnames = timeStampEnd)
 
-outersect <- function(x, y) {
-        sort(c(setdiff(x, y), setdiff(y, x)))
-}
-
-unMatched0 <- Reduce(outersect, newNames)
+unmatched <- Reduce(outersect, newNames)
 
 ## Look at this list (includes coded variables, e.g., '2A2B1')
-do.call(cbind, split(unMatched0, c(TRUE, FALSE)))
-
-unmatched <- unMatched0[grepl("^[A-Z]", unMatched0, ignore.case = TRUE)]
+do.call(cbind, split(unmatched, c(TRUE, FALSE)))
 
 lvDist <- stringdistmatrix(tolower(unmatched), method = "lv")
 shortDist <- as.matrix(lvDist) == 1L | as.matrix(lvDist) == 2L
@@ -112,3 +114,32 @@ closeNames[, "shorter"] <- closeNames[["longer"]] + shorter
 ## Fix rownames
 closeNames <- data.frame(closeNames, row.names = seq_len(nrow(closeNames)),
                          stringsAsFactors = FALSE)
+
+corrections <- cbind.data.frame(
+    short = vapply(seq_len(nrow(closeNames)),
+                   function(i) {
+                       closeNames[i, closeNames[["shorter"]][i]]
+                   }, character(1L)),
+    long = vapply(seq_len(nrow(closeNames)),
+                  function(i) {
+                      closeNames[i, closeNames[["longer"]][i]]
+                  }, character(1L)),
+    stringsAsFactors = FALSE)
+
+## Manual entry
+corrections <- rbind(corrections,
+                     data.frame(short = "totcyst", long = "TotCyst"))
+
+LongNewNames <- cbind.data.frame(varName = unlist(newNames),
+                                 group = rep(names(newNames),
+                                             lengths(newNames)),
+                                 row.names = NULL,
+                                 stringsAsFactors = FALSE)
+
+isShort <- vapply(corrections$short, `==`, logical(nrow(LongNewNames)), LongNewNames$varName)
+stopifnot(!any(rowSums(isShort) > 1))
+
+apply(isShort, 1, which.max)
+
+## Check all vars match across datasets
+stopifnot(!length(Reduce(outersect, newNames)))
