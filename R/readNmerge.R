@@ -25,6 +25,11 @@ for (i in seq_along(dataList)) {
     }
 }
 
+drugVar <- dataList[[1]][, c("ID", "drug", "drug_gro")]
+
+## Remove extra variables
+dataList[[1]] <- dataList[[1]][, -which(names(dataList[[1]]) %in% c("drug", "drug_gro"))]
+
 ## Convenience function for getting the outersect
 outersect <- function(x, y) {
     sort(c(setdiff(x, y), setdiff(y, x)))
@@ -37,9 +42,6 @@ timeStampStart <- LogicalList(lapply(dataNames, function(x) {
 }))
 
 timeVaryingNames <- dataNames[timeStampStart]
-
-## Check all vars match across datasets
-stopifnot(!length(Reduce(outersect, timeVaryingNames)))
 
 timeStampEnd <- dataNames[!timeStampStart]
 
@@ -61,6 +63,9 @@ for (i in seq_along(timeVaryingNames)) {
     timeVaryingNames[[i]] <- gsub(timePoints[[i]], "", timeVaryingNames[[i]],
                                  ignore.case = TRUE)
 }
+
+## Check all vars match across datasets
+stopifnot(!length(Reduce(outersect, timeVaryingNames)))
 
 endings <- IRanges::CharacterList(
     Baseline = paste(c("YN$", "Ca$"), collapse = "|"),
