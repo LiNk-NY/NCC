@@ -73,8 +73,8 @@ endings <- IRanges::CharacterList(
     M1Scan = paste(c("YN1$", "1$", "Y1$", "C1$", "M1$"), collapse = "|"),
     M6Scan = paste(c("YN6$", "6$", "Y6$", "C6$", "M6$"), collapse = "|"))
 
-newNames <- mapply(function(patterns, varnames) {
-    gsub(patterns, "", varnames, ignore.case = TRUE)
+newNames <- S4Vectors::mendoapply(function(patterns, varnames) {
+    gsub(patterns, "", varnames, ignore.case = FALSE) ## Cases correct
 }, patterns = endings, varnames = timeStampEnd)
 
 unmatched <- Reduce(outersect, newNames)
@@ -141,10 +141,34 @@ LongNewNames <- cbind.data.frame(varName = unlist(newNames),
                                  row.names = NULL,
                                  stringsAsFactors = FALSE)
 
-isShort <- vapply(corrections$short, `==`, logical(nrow(LongNewNames)), LongNewNames$varName)
+isShort <- vapply(corrections$short, `==`,
+                  logical(nrow(LongNewNames)),
+                  LongNewNames$varName)
 stopifnot(!any(rowSums(isShort) > 1))
 
-apply(isShort, 1, which.max)
+replaceIdx <- apply(isShort, 1, which.max)
+replaceIdx[replaceIdx == 1L] <- 0L
+truePos <- which(isShort[, 1])
+replaceIdx[truePos] <- 1L
+
+NonZero <- replaceIdx != 0L
+replaceVec <- corrections$long[replaceIdx[NonZero]]
+
+stopifnot(identical(length(replaceVec), sum(NonZero)))
+
+LongNewNames[NonZero, 1] <- corrections$long[replaceIdx[NonZero]]
+reNewNames <- IRanges::splitAsList(LongNewNames[[1]], LongNewNames[[2]])
 
 ## Check all vars match across datasets
-stopifnot(!length(Reduce(outersect, newNames)))
+stopifnot(!length(Reduce(outersect, reNewNames)))
+
+dataNames[!timeStampStart] <- reNewNames
+dataNames[timeStampStart] <- timeVaryingNames
+
+stopifnot(!length(Reduce(outersect, dataNames)))
+
+## TODO: Add time after names are changed!
+newDataList <- lapply(seq_along(dataList), function(i, dataset) {
+    names(dataset[[i]]) <- dataNames[[i]]
+    dataset[[i]]
+}, dataset = dataList)
