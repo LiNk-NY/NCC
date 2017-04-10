@@ -45,6 +45,7 @@ timeVaryingNames <- dataNames[timeStampStart]
 
 timeStampEnd <- dataNames[!timeStampStart]
 
+## Sample time stamped names and take the first 3 characters (time indicator)
 timePoints <- vapply(timeVaryingNames,
                     function(nameList) {
                         TimeName <- sample(nameList, size = 1L)
@@ -54,11 +55,7 @@ timePoints <- vapply(timeVaryingNames,
 stopifnot(identical(names(dataNames), names(timePoints)))
 stopifnot(identical(names(timeVaryingNames), names(timePoints)))
 
-## Add TIME column to datasets
-for (i in seq_along(dataList)) {
-    dataList[[i]][["TIME"]] <- timePoints[[i]]
-}
-
+## Remove time indicators from variable names
 for (i in seq_along(timeVaryingNames)) {
     timeVaryingNames[[i]] <- gsub(timePoints[[i]], "", timeVaryingNames[[i]],
                                  ignore.case = TRUE)
@@ -68,7 +65,7 @@ for (i in seq_along(timeVaryingNames)) {
 stopifnot(!length(Reduce(outersect, timeVaryingNames)))
 
 endings <- IRanges::CharacterList(
-    Baseline = paste(c("YN$", "Ca$"), collapse = "|"),
+    Baseline = paste(c("YN$", "y$", "Ca$"), collapse = "|"),
     M12Scan = paste(c("YNY$", "Y$", "YY$", "CY$", "M12$"), collapse = "|"),
     M1Scan = paste(c("YN1$", "1$", "Y1$", "C1$", "M1$"), collapse = "|"),
     M6Scan = paste(c("YN6$", "6$", "Y6$", "C6$", "M6$"), collapse = "|"))
@@ -120,6 +117,7 @@ closeNames[, "shorter"] <- closeNames[["longer"]] + shorter
 closeNames <- data.frame(closeNames, row.names = seq_len(nrow(closeNames)),
                          stringsAsFactors = FALSE)
 
+## Create a corrections data.frame for mapping short to long variable names
 corrections <- cbind.data.frame(
     short = vapply(seq_len(nrow(closeNames)),
                    function(i) {
@@ -167,8 +165,14 @@ dataNames[timeStampStart] <- timeVaryingNames
 
 stopifnot(!length(Reduce(outersect, dataNames)))
 
-## TODO: Add time after names are changed!
 newDataList <- lapply(seq_along(dataList), function(i, dataset) {
     names(dataset[[i]]) <- dataNames[[i]]
     dataset[[i]]
 }, dataset = dataList)
+
+## Add TIME column to datasets
+for (i in seq_along(newDataList)) {
+    newDataList[[i]][["TIME"]] <- timePoints[[i]]
+}
+
+NCCdata <- do.call(rbind, newDataList)
