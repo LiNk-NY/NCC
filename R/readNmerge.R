@@ -3,9 +3,12 @@
 ## source("https://bioconductor.org/biocLite.R")
 ## BiocInstaller::biocLite("IRanges")
 
-library(haven)
-library(IRanges)
-library(stringdist)
+suppressPackageStartupMessages({
+    library(haven)
+    library(dplyr)
+    library(IRanges)
+    library(stringdist)
+})
 
 dataList <- list.files("data", pattern = "\\.sav$", full.names = TRUE)
 names(dataList) <- gsub(".sav", "", basename(dataList), fixed = TRUE)
@@ -170,9 +173,28 @@ newDataList <- lapply(seq_along(dataList), function(i, dataset) {
     dataset[[i]]
 }, dataset = dataList)
 
+names(newDataList) <- names(dataList)
+
+timeNumeric <- c(BSE = 0L, SYE = 12L, S1E = 1L, S6E = 6L)
+
+## Check any variable with the name month already in data
+stopifnot(!any(tolower(names(newDataList[[1]])) == "month"))
+
 ## Add TIME column to datasets
 for (i in seq_along(newDataList)) {
-    newDataList[[i]][["TIME"]] <- timePoints[[i]]
+    newDataList[[i]] <- tibble::add_column(newDataList[[i]],
+                                           MONTH = rep(timeNumeric[[i]],
+                                                       nrow(newDataList[[i]])),
+                                           .after = 1)
 }
 
-NCCdata <- do.call(rbind, newDataList)
+NCCdata <- dplyr::bind_rows(newDataList)
+
+NCCdata <- dplyr::arrange(NCCdata, ID, MONTH)
+
+## Find which IDs have less than 4 measurements
+tots <- group_by(NCCdata, ID) %>% summarize(N = n())
+incompleteIDs <- tots[which(tots[["N"]] < 4), "ID"]
+
+## Split data by ID and impute NA for missing measurements
+split(NCCdata, NCCdata[["ID"]])[as.character(unname(unlist(incompleteIDs)))]
