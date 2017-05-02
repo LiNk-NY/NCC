@@ -8,6 +8,7 @@ suppressPackageStartupMessages({
     library(dplyr)
     library(IRanges)
     library(stringdist)
+    library(purrr)
 })
 
 dataList <- list.files("data", pattern = "\\.sav$", full.names = TRUE)
@@ -193,8 +194,12 @@ NCCdata <- dplyr::bind_rows(newDataList)
 NCCdata <- dplyr::arrange(NCCdata, ID, MONTH)
 
 ## Find which IDs have less than 4 measurements
-tots <- group_by(NCCdata, ID) %>% summarize(N = n())
-incompleteIDs <- tots[which(tots[["N"]] < 4), "ID"]
+group_by(NCCdata, ID) %>% summarize(N = n())
 
-## Split data by ID and impute NA for missing measurements
-split(NCCdata, NCCdata[["ID"]])[as.character(unname(unlist(incompleteIDs)))]
+# Impute missing timepoints
+fullNCC <- split(NCCdata, NCCdata[["ID"]]) %>%
+    map(~ suppressMessages(right_join(.x,
+                     tibble(ID = rep(unique(.x[["ID"]]), length(timeNumeric)),
+                            MONTH = sort(timeNumeric)))))
+
+fullNCC <- dplyr::bind_rows(fullNCC)
