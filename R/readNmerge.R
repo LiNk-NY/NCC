@@ -203,3 +203,6 @@ fullNCC <- split(NCCdata, NCCdata[["ID"]]) %>%
                             MONTH = sort(timeNumeric)))))
 
 fullNCC <- dplyr::bind_rows(fullNCC)
+
+## TODO: Use proper format and remove `sapply`
+validC <- split(aa, aa$ID)[sapply(lapply(split(aa, aa$ID), function(x) {apply(x, 1, .checkSum)}), function(x) !any(x, na.rm = TRUE))]
