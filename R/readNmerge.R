@@ -202,7 +202,26 @@ fullNCC <- split(NCCdata, NCCdata[["ID"]]) %>%
                      tibble(ID = rep(unique(.x[["ID"]]), length(timeNumeric)),
                             MONTH = sort(timeNumeric)))))
 
-fullNCC <- dplyr::bind_rows(fullNCC)
+.checkSum <- function(x) {
+    sum(x[, 3:5]) > 1
+}
+
+NCCdf <- dplyr::bind_rows(fullNCC)
+
+infoFrame <- data.frame(
+    pattern = c("^2[A-Z]*", "^3[A-Z]*", "^[23]A*", "^[23]B*",
+                "^[23]C*", "^[23]D*", "^[23]E*", "^[23][A-E]1*",
+                "^[23][A-E]2*", "^[23][A-E]3*", "^[23][A-E][1-3]A",
+                "^[23][A-E][1-3]B1", "^[23][A-E][1-3]B2", "^[23][A-E][1-3]C"),
+    interpretation = c("LeftHemi", "RightHemi", "Frontal", "Temporal",
+                       "Parietal", "Occipital", "Basal", "Active",
+                       "Transitional", "Inactive", "Parenchymal",
+                       "SubarachNumber", "SubarachClust", "Indeterminate"),
+    level = c(rep("First", 2), rep("Second", 5), rep("Third", 3),
+              rep ("Fourth", 4)),
+    variableName = c(rep("Hemisphere", 2), rep("Area", 5),
+                     rep("Status", 3), rep("Tissue", 4))
+)
 
 ## TODO: Use proper format and remove `sapply`
 validC <- split(aa, aa$ID)[sapply(lapply(split(aa, aa$ID), function(x) {apply(x, 1, .checkSum)}), function(x) !any(x, na.rm = TRUE))]
