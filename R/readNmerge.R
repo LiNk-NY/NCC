@@ -5,6 +5,7 @@
 
 suppressPackageStartupMessages({
     library(haven)
+    library(readr)
     library(dplyr)
     library(IRanges)
     library(stringdist)
@@ -193,7 +194,7 @@ NCCdata <- dplyr::bind_rows(newDataList)
 
 NCCdata <- dplyr::arrange(NCCdata, ID, MONTH)
 
-## Find which IDs have less than 4 measurements
+## Tally by ID entries
 group_by(NCCdata, ID) %>% summarize(N = n())
 
 # Impute missing timepoints
@@ -208,10 +209,15 @@ fullNCC <- split(NCCdata, NCCdata[["ID"]]) %>%
 
 NCCdf <- dplyr::bind_rows(fullNCC)
 
+## Type convert characters to integers where possible
+charVars <- vapply(NCCdf, is.character, logical(1L))
+NCCdf[, charVars] <- readr::type_convert(NCCdf[, charVars])
+
+## Create codebook data frame for extracting data from variable names
 infoFrame <- data.frame(
-    pattern = c("^2[A-Z]*", "^3[A-Z]*", "^[23]A*", "^[23]B*",
-                "^[23]C*", "^[23]D*", "^[23]E*", "^[23][A-E]1*",
-                "^[23][A-E]2*", "^[23][A-E]3*", "^[23][A-E][1-3]A",
+    pattern = c("^2[A-Z]*", "^3[A-Z]*", "^[23]A.", "^[23]B.",
+                "^[23]C.", "^[23]D.", "^[23]E.", "^[23][A-E]1.",
+                "^[23][A-E]2.", "^[23][A-E]3.", "^[23][A-E][1-3]A",
                 "^[23][A-E][1-3]B1", "^[23][A-E][1-3]B2", "^[23][A-E][1-3]C"),
     interpretation = c("LeftHemi", "RightHemi", "Frontal", "Temporal",
                        "Parietal", "Occipital", "Basal", "Active",
@@ -220,8 +226,35 @@ infoFrame <- data.frame(
     level = c(rep("First", 2), rep("Second", 5), rep("Third", 3),
               rep ("Fourth", 4)),
     variableName = c(rep("Hemisphere", 2), rep("Area", 5),
-                     rep("Status", 3), rep("Tissue", 4))
+                     rep("Status", 3), rep("Tissue", 4)),
+    stringsAsFactors = FALSE
 )
+
+## Find variable names for right and left hemispheres
+findHemi <- grep("^[23]", names(NCCdf), value = TRUE)
+
+## Obtain hit matrix for matching patterns in variable names
+namesHitMat <- vapply(infoFrame[["pattern"]], function(x) grepl(x, findHemi),
+                      logical(length(findHemi)))
+rownames(namesHitMat) <- findHemi
+
+## Matches in infoFrame for each variable (see interpretation column)
+decodedVariable <- apply(namesHitMat, 1, function(g) infoFrame[g, ])
+
+## Take interpretation column and create new data from variables
+vars <- t(vapply(decodedVariable, function(x) x[["interpretation"]], character(4L)))
+vars <- as.data.frame(vars, stringsAsFactors = FALSE)
+vars$Code <- rownames(vars)
+
+regions <- arrange(vars, Tissue) %>%
+    split(., list(.$Hemisphere, .$Area, .$Tissue)) %>%
+    map(function(x) x$Code)
+
+## Example data chunk by region
+split(NCCdf[, regions[[1]]], NCCdf$ID)[[1]]
+
+## Check for region info
+vars[vars$Code %in% c("2E1C", "2E2C", "2E3C"), ]
 
 ## TODO: Use proper format and remove `sapply`
 validC <- split(aa, aa$ID)[sapply(lapply(split(aa, aa$ID), function(x) {apply(x, 1, .checkSum)}), function(x) !any(x, na.rm = TRUE))]
