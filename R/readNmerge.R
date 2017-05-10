@@ -203,10 +203,6 @@ fullNCC <- split(NCCdata, NCCdata[["ID"]]) %>%
                      tibble(ID = rep(unique(.x[["ID"]]), length(timeNumeric)),
                             MONTH = sort(timeNumeric)))))
 
-.checkSum <- function(x) {
-    sum(x[, 3:5]) > 1
-}
-
 NCCdf <- dplyr::bind_rows(fullNCC)
 
 ## Type convert characters to integers where possible
@@ -244,17 +240,32 @@ decodedVariable <- apply(namesHitMat, 1, function(g) infoFrame[g, ])
 ## Take interpretation column and create new data from variables
 vars <- t(vapply(decodedVariable, function(x) x[["interpretation"]], character(4L)))
 vars <- as.data.frame(vars, stringsAsFactors = FALSE)
+colnames(vars) <- unique(infoFrame[["variableName"]])
 vars$Code <- rownames(vars)
+vars$Status <- factor(vars$Status,
+                      levels = c("Active", "Transitional", "Inactive"),
+                      ordered = TRUE)
 
-regions <- arrange(vars, Tissue) %>%
+regions <- arrange(vars, Tissue, Status) %>%
     split(., list(.$Hemisphere, .$Area, .$Tissue)) %>%
     map(function(x) x$Code)
 
 ## Example data chunk by region
-split(NCCdf[, regions[[1]]], NCCdf$ID)[[1]]
+regionID <- lapply(regions, function(reg) split(NCCdf[, reg], NCCdf$ID))
 
-## Check for region info
-vars[vars$Code %in% c("2E1C", "2E2C", "2E3C"), ]
+## Create checker function for data chunks (region by ID)
+.validCystMatrix <- function(x) {
+    stopifnot(nrow(x) == 4L)
+    !any(apply(x, 1, function(g) { sum(g) > 1 }), na.rm = TRUE)
+}
 
-## TODO: Use proper format and remove `sapply`
-validC <- split(aa, aa$ID)[sapply(lapply(split(aa, aa$ID), function(x) {apply(x, 1, .checkSum)}), function(x) !any(x, na.rm = TRUE))]
+.validCystMatrix(regionID[[1L]][[1]])
+
+## Check how many code chunks per region and ID are valid
+lapply(regionID, function(reg) { sum(vapply(reg, function(x) {.validCystMatrix(x)}, logical(1L)))})
+
+## Breakdown valid chunks by region and ID
+lapply(regionID, function(reg) { vapply(reg, function(x) {.validCystMatrix(x)}, logical(1L))})
+
+## Checking example region and ID
+regionID$LeftHemi.Temporal.SubarachNumber$`3001`
