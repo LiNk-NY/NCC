@@ -253,10 +253,21 @@ regions <- arrange(vars, Tissue, Status) %>%
 ## Example data chunk by region
 regionID <- lapply(regions, function(reg) split(NCCdf[, reg], NCCdf$ID))
 
+## Checker functions
+## No sum of rows greater than 1
+.sumRowsGT1 <- function(x) {
+    !any(apply(x, 1, function(g) { sum(g) > 1 }), na.rm = TRUE)
+}
+
+## Total matrix sum is not zero
+.totalSumZero <- function(x) {
+    sum(x, na.rm = TRUE) != 0L
+}
+
 ## Create checker function for data chunks (region by ID)
 .validCystMatrix <- function(x) {
     stopifnot(nrow(x) == 4L)
-    !any(apply(x, 1, function(g) { sum(g) > 1 }), na.rm = TRUE)
+    all(.sumRowsGT1(x), .totalSumZero(x))
 }
 
 .validCystMatrix(regionID[[1L]][[1]])
@@ -267,5 +278,8 @@ lapply(regionID, function(reg) { sum(vapply(reg, function(x) {.validCystMatrix(x
 ## Breakdown valid chunks by region and ID
 lapply(regionID, function(reg) { vapply(reg, function(x) {.validCystMatrix(x)}, logical(1L))})
 
+## Get IDs that have a valid matrix
+lapply(regionID, function(reg) { names(Filter(isTRUE, vapply(reg, function(x) {.validCystMatrix(x)}, logical(1L)))) } )
+
 ## Checking example region and ID
-regionID$LeftHemi.Temporal.SubarachNumber$`3001`
+regionID$RightHemi.Temporal.SubarachNumber$`1109`
