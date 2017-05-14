@@ -3,4 +3,5 @@
 .RData
 .Ruserdata
 data/*.[Ss][Aa][Vv]
+*.[Rr][Dd][Ss]
 .httr-oauth
