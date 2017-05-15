@@ -4,11 +4,23 @@ source("R/loadPackages.R")
 ## Load helper dataset
 source("R/helperData.R")
 
+## Load validation functions
+source("R/validation.R")
+
 ## Load clean data
 NCCdf <- readr::read_rds("data/NCCmerged.rds")
 
 ## Find variable names for right and left hemispheres
 findHemi <- grep("^[23]", names(NCCdf), value = TRUE)
+
+## Shorten location names
+locNames <- gsub("([23][A-Z])(.)([A-Z]*)", "\\1.\\3", findHemi)
+names(locNames) <- findHemi
+
+## Check no matches in 3 info spot (STATUS)
+any(vapply(infoFrame[["pattern"]], function(x) { grepl(x, locNames) },
+    logical(length(locNames)))[, infoFrame[infoFrame$variableName=="Status",
+                                           "pattern"]])
 
 ## Obtain hit matrix for matching patterns in variable names
 namesHitMat <- vapply(infoFrame[["pattern"]], function(x) grepl(x, findHemi),
@@ -19,51 +31,47 @@ rownames(namesHitMat) <- findHemi
 decodedVariable <- apply(namesHitMat, 1, function(g) infoFrame[g, ])
 
 ## Take interpretation column and create new data from variables
-vars <- t(vapply(decodedVariable, function(x) x[["interpretation"]], character(4L)))
-vars <- as.data.frame(vars, stringsAsFactors = FALSE)
-colnames(vars) <- unique(infoFrame[["variableName"]])
-vars$Code <- rownames(vars)
-vars$Status <- factor(vars$Status,
+locationDat <- t(vapply(decodedVariable, function(x) x[["interpretation"]], character(4L)))
+locationDat <- as.data.frame(locationDat, stringsAsFactors = FALSE)
+colnames(locationDat) <- unique(infoFrame[["variableName"]])
+locationDat$Code <- rownames(locationDat)
+locationDat$Status <- factor(locationDat$Status,
                       levels = c("Active", "Transitional", "Inactive"),
                       ordered = TRUE)
 
-regions <- arrange(vars, Tissue, Status) %>%
+regions <- arrange(locationDat, Tissue, Status) %>%
     split(., list(.$Hemisphere, .$Area, .$Tissue)) %>%
     map(function(x) x$Code)
+
+colsInterest <- vapply(regions, function(x) c("ID", "MONTH", x), character(5L))
+test <- colsInterest[, 1]
+
+## Long and skinny format
+unite(NCCdf[, test], IDMONTH, c(ID, MONTH)) %>%
+    gather(LOCATION, COUNT, -IDMONTH) %>%
+    separate(IDMONTH, c("ID", "MONTH")) %>%
+    mutate(STAGE = factor(gsub("([23][A-Z])(.)([A-Z]*)", "\\2", LOCATION),
+                          levels = 1:3,
+                          labels = c("Active", "Transitional", "Inactive"))) %>%
+    arrange(ID, MONTH, STAGE)
 
 ## Example data chunk by region
 regionID <- lapply(regions, function(reg) split(NCCdf[, reg], NCCdf$ID))
 
-## Checker functions
-## No sum of rows greater than 1
-.sumRowsGT1 <- function(x) {
-    !any(apply(x, 1, function(g) { sum(g) > 1 }), na.rm = TRUE)
-}
-
-## Total matrix sum is not zero
-.totalSumZero <- function(x) {
-    sum(x, na.rm = TRUE) != 0L
-}
-
-## Create checker function for data chunks (region by ID)
-.validCystMatrix <- function(x) {
-    stopifnot(nrow(x) == 4L)
-    all(.sumRowsGT1(x), .totalSumZero(x))
-}
-
-.validCystMatrix(regionID[[1L]][[1]])
+## Function from validation file
+validCystMatrix(regionID[[1L]][[1]])
 
 ## Check how many code chunks per region and ID are valid
-lapply(regionID, function(reg) { sum(vapply(reg, function(x) {.validCystMatrix(x)}, logical(1L)))})
+lapply(regionID, function(reg) { sum(vapply(reg, function(x) {validCystMatrix(x)}, logical(1L)))})
 
 ## Breakdown valid chunks by region and ID
-lapply(regionID, function(reg) { vapply(reg, function(x) {.validCystMatrix(x)}, logical(1L))})
+lapply(regionID, function(reg) { vapply(reg, function(x) {validCystMatrix(x)}, logical(1L))})
 
 ## Get IDs that have a valid matrix
 validIDs <- lapply(regionID, function(reg) {
     names(Filter(isTRUE, vapply(reg,
         function(x) {
-            .validCystMatrix(x)
+            validCystMatrix(x)
             }, logical(1L))))
     })
 
