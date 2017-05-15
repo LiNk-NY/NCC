@@ -1,6 +1,9 @@
 ## Cleaning and merging datasets
 ## NOTE. run R/download.R to download data
 
+## Load helper dataset
+source("R/helperData.R")
+
 ## Read NCC SAV datasets
 dataList <- list.files("data", pattern = "\\.sav$", full.names = TRUE)
 names(dataList) <- gsub(".sav", "", basename(dataList), fixed = TRUE)
