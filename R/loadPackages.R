@@ -8,4 +8,5 @@ suppressPackageStartupMessages({
     library(IRanges)
     library(stringdist)
     library(purrr)
+    library(tidyr)
 })
