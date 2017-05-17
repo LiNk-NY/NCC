@@ -11,6 +11,10 @@
     sum(x, na.rm = TRUE) != 0L
 }
 
+.notAllNA <- function(x) {
+    all(is.na(x))
+}
+
 .valueCheck <- function(x) {
     ##check that row sums are conserved
     xdiff <- cbind(0, (x[-1, ] - x[-nrow(x), ]))
@@ -27,6 +31,6 @@
 ## Create checker function for data chunks (region by ID)
 validCystMatrix <- function(x) {
     stopifnot(nrow(x) == 4L)
-    all(.sumRowsGT1(x), .totalSumNotZero(x), .valueCheck(x))
+    all(.sumRowsGT1(x), .totalSumNotZero(x), .valueCheck(x), .notAllNA(x))
 }
 

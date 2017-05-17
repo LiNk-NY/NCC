@@ -1,6 +1,9 @@
 ## Cleaning and merging datasets
 ## NOTE. run R/download.R to download data
 
+## Load dependencies
+source("R/loadPackages.R")
+
 ## Load helper dataset
 source("R/helperData.R")
 
