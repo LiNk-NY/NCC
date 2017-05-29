@@ -12,12 +12,16 @@
 }
 
 .notAllNA <- function(x) {
-    all(is.na(x))
+    !all(is.na(x))
 }
 
 .valueCheck <- function(x) {
+    naRows <- rowSums(is.na(x)) == ncol(x)
+    if (sum(naRows) >= (nrow(x) - 1L))
+        return(FALSE)
+    x <- x[!naRows, ]
     ##check that row sums are conserved
-    xdiff <- cbind(0, (x[-1, ] - x[-nrow(x), ]))
+    tryCatch({xdiff <- cbind(0, (x[-1, ] - x[-nrow(x), ]))}, error = function(e) browser())
     checklog <- vector("logical")
     for (i in 2:ncol(xdiff)) {
         ##the change in one column plus the sum of changes of columns to the left
@@ -31,6 +35,11 @@
 ## Create checker function for data chunks (region by ID)
 validCystMatrix <- function(x) {
     stopifnot(nrow(x) == 4L)
-    all(.sumRowsGT1(x), .totalSumNotZero(x), .valueCheck(x), .notAllNA(x))
+    if (.notAllNA(x)) {
+        res <- all(.sumRowsGT1(x), .totalSumNotZero(x), .valueCheck(x))
+    } else {
+        res <- FALSE
+    }
+    return(res)
 }
 

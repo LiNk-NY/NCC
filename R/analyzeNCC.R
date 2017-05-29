@@ -17,7 +17,7 @@ findHemi <- grep("^[23]", names(NCCdf), value = TRUE)
 locNames <- gsub("([23][A-Z])(.)([A-Z]*)", "\\1.\\3", findHemi)
 names(locNames) <- findHemi
 
-## Check no matches in 3 info spot (STATUS)
+## Check there are no matches in 3rd info spot in coded locations (STATUS)
 any(vapply(infoFrame[["pattern"]], function(x) { grepl(x, locNames) },
     logical(length(locNames)))[, infoFrame[infoFrame$variableName=="Status",
                                            "pattern"]])
