@@ -10,22 +10,24 @@ source("R/validation.R")
 ## Load clean data
 NCCdf <- readr::read_rds("data/NCCmerged.rds")
 
-## Find variable names for right and left hemispheres
-findHemi <- grep("^[23]", names(NCCdf), value = TRUE)
+colNames <- names(NCCdf)
 
-## Shorten location names
-locNames <- gsub("([23][A-Z])(.)([A-Z]*)", "\\1.\\3", findHemi)
-names(locNames) <- findHemi
+hitVec <- apply(vapply(infoFrame[["pattern"]], function(x) {
+        grepl(x, colNames)
+    }, logical(length(colNames))), 1, any)
+names(hitVec) <- colNames
 
-## Check there are no matches in 3rd info spot in coded locations (STATUS)
-any(vapply(infoFrame[["pattern"]], function(x) { grepl(x, locNames) },
-    logical(length(locNames)))[, infoFrame[infoFrame$variableName=="Status",
-                                           "pattern"]])
+## Check pattern is picking up correct targets
+(pickedUp <- Filter(isTRUE, hitVec))
+
+## Check left out
+setdiff(names(NCCdf), names(pickedUp))
 
 ## Obtain hit matrix for matching patterns in variable names
-namesHitMat <- vapply(infoFrame[["pattern"]], function(x) grepl(x, findHemi),
-                      logical(length(findHemi)))
-rownames(namesHitMat) <- findHemi
+namesHitMat <- vapply(infoFrame[["pattern"]], function(x) grepl(x, colNames),
+                      logical(length(colNames)))
+rownames(namesHitMat) <- colNames
+namesHitMat <- namesHitMat[rowSums(namesHitMat) > 0L, ]
 
 ## Matches in infoFrame for each variable (see interpretation column)
 decodedVariable <- apply(namesHitMat, 1, function(g) infoFrame[g, ])
