@@ -38,22 +38,31 @@ locationDat$Code <- rownames(locationDat)
 locationDat$Status <- factor(locationDat$Status,
                       levels = c("Active", "Transitional", "Inactive"),
                       ordered = TRUE)
+locationDat$CombCode <- gsub("(^[23][A-Z])([1-3])([A-Z]*.)", "\\1X\\3",
+                              locationDat$Code)
 
 regions <- arrange(locationDat, Tissue, Status) %>%
     split(., list(.$Hemisphere, .$Area, .$Tissue)) %>%
     map(function(x) x$Code)
 
-colsInterest <- vapply(regions, function(x) c("ID", "MONTH", x), character(5L))
-test <- colsInterest[, 1]
+colsInterest <- lapply(regions, function(x) c("ID", "MONTH", x))
 
 ## Long and skinny format
-unite(NCCdf[, test], IDMONTH, c(ID, MONTH)) %>%
+dataByLOC <- lapply(colsInterest, function(region) {
+unite(NCCdf[, region], IDMONTH, c(ID, MONTH)) %>%
     gather(LOCATION, COUNT, -IDMONTH) %>%
     separate(IDMONTH, c("ID", "MONTH")) %>%
-    mutate(STAGE = factor(gsub("([23][A-Z])(.)([A-Z]*)", "\\2", LOCATION),
+    mutate(STAGE = factor(gsub("([23][A-Z])(.)([A-Z]*.)", "\\2", LOCATION),
                           levels = 1:3,
                           labels = c("Active", "Transitional", "Inactive"))) %>%
-    arrange(ID, MONTH, STAGE)
+    arrange(ID, MONTH, STAGE, LOCATION) %>%
+        mutate(CombCode = gsub("(^[23][A-Z])([1-3])([A-Z]*.)",
+                    "\\1X\\3", LOCATION))
+})
+
+dataByLOC <- dplyr::bind_rows(dataByLOC)
+NCCFULL <- left_join(dataByLOC, locationDat %>% select(-Code))
+NCCwide <- spread(NCCFULL, key = Status, value = COUNT)
 
 ## Example data chunk by region
 regionID <- lapply(regions, function(reg) split(NCCdf[, reg], NCCdf$ID))
@@ -81,11 +90,12 @@ regionReduce <- regionID[names(IDbyRegion)]
 
 stopifnot(identical(names(IDbyRegion), names(regionReduce)))
 
-validMats <- lapply(seq_along(regionReduce), function(matList, i, vecList) {
+validRegionMats <- lapply(seq_along(regionReduce), function(matList, i, vecList) {
     matList[[i]][vecList[[i]]]
 }, matList = regionReduce, vecList = IDbyRegion)
 
-names(validMats) <- names(IDbyRegion)
+names(validRegionMats) <- names(IDbyRegion)
 
-## Checking example region and ID
-regionID$RightHemi.Temporal.SubarachNumber$`1109`
+validMats <- lapply(validRegionMats, function(loc) {
+    dplyr::bind_rows(loc, .id = "ID")
+})
