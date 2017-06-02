@@ -32,6 +32,15 @@ namesHitMat <- namesHitMat[rowSums(namesHitMat) > 0L, ]
 ## Matches in infoFrame for each variable (see interpretation column)
 decodedVariable <- apply(namesHitMat, 1, function(g) infoFrame[g, ])
 
+decodedVariable <- lapply(decodedVariable,
+   function(z) {
+       suppressMessages(
+           right_join(z, data.frame(variableName =
+                        c("Region", "Area", "Status", "Tissue"),
+                        stringsAsFactors = FALSE)
+                   ))
+       })
+
 ## Take interpretation column and create new data from variables
 locationDat <- t(vapply(decodedVariable, function(x) x[["interpretation"]], character(4L)))
 locationDat <- as.data.frame(locationDat, stringsAsFactors = FALSE)
