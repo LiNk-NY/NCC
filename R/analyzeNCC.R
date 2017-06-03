@@ -49,16 +49,21 @@ locationDat$Code <- rownames(locationDat)
 locationDat$Status <- factor(locationDat$Status,
                       levels = c("Active", "Transitional", "Inactive"),
                       ordered = TRUE)
-locationDat$CombCode <- gsub("(^[23][A-Z])([1-3])([A-Z]*.)", "\\1X\\3",
-                              locationDat$Code)
+locationDat$CombCode <-  gsub("(^[235]*.)([1-3])([A-Z]*.)", "\\1X\\3",
+                            locationDat$Code) %>%
+                                gsub("(^[67][A-F])([1-3])", "\\1X", .)
+locationDat$Area[locationDat$Region == "PosteriorFossa"] <- "BS/Cerebellum"
+locationDat <- locationDat[!is.na(locationDat$Status) &
+                               grepl("X", locationDat$CombCode), ]
 
-regions <- arrange(locationDat, Tissue, Status) %>%
-    split(., list(.$Hemisphere, .$Area, .$Tissue)) %>%
-    map(function(x) x$Code)
+regions <- arrange(locationDat, Tissue, Status) %>% select(-Tissue) %>%
+    split(., list(.$Region, .$Area, .$CombCode)) %>%
+        Filter(function(x) nrow(x) != 0L, .) %>% map(function(x) x$Code)
 
 colsInterest <- lapply(regions, function(x) c("ID", "MONTH", x))
 
 ## Long and skinny format
+## FIX HERE
 dataByLOC <- lapply(colsInterest, function(region) {
 unite(NCCdf[, region], IDMONTH, c(ID, MONTH)) %>%
     gather(LOCATION, COUNT, -IDMONTH) %>%
@@ -67,7 +72,7 @@ unite(NCCdf[, region], IDMONTH, c(ID, MONTH)) %>%
                           levels = 1:3,
                           labels = c("Active", "Transitional", "Inactive"))) %>%
     arrange(ID, MONTH, STAGE, LOCATION) %>%
-        mutate(CombCode = gsub("(^[23][A-Z])([1-3])([A-Z]*.)",
+        mutate(CombCode = gsub("(^[235]*.)([1-3])([A-Z]*.)",
                     "\\1X\\3", LOCATION))
 })
 
