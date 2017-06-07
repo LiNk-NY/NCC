@@ -68,16 +68,12 @@ dataByLOC <- lapply(colsInterest, function(region) {
 unite(NCCdf[, region], IDMONTH, c(ID, MONTH)) %>%
     gather(LOCATION, COUNT, -IDMONTH) %>%
     separate(IDMONTH, c("ID", "MONTH")) %>%
-    mutate(STAGE = factor(gsub("([23][A-Z])(.)([A-Z]*.)", "\\2", LOCATION),
-                          levels = 1:3,
-                          labels = c("Active", "Transitional", "Inactive"))) %>%
-    arrange(ID, MONTH, STAGE, LOCATION) %>%
-        mutate(CombCode = gsub("(^[235]*.)([1-3])([A-Z]*.)",
-                    "\\1X\\3", LOCATION))
+    arrange(ID, MONTH, LOCATION)
 })
 
 dataByLOC <- dplyr::bind_rows(dataByLOC)
-NCCFULL <- left_join(dataByLOC, locationDat %>% select(-Code))
+NCCFULL <- left_join(dataByLOC, locationDat, by = c("LOCATION" = "Code"))
+
 NCCwide <- spread(NCCFULL, key = Status, value = COUNT)
 
 ## Example data chunk by region
@@ -102,16 +98,15 @@ validIDs <- lapply(regionID, function(reg) {
 
 IDbyRegion <- Filter(length, validIDs)
 
-regionReduce <- regionID[names(IDbyRegion)]
+validLocs <- vapply(strsplit(names(IDbyRegion), split = "\\."),
+                    function(vec) vec[[3]], character(1L))
+names(validLocs) <- names(IDbyRegion)
 
-stopifnot(identical(names(IDbyRegion), names(regionReduce)))
+dataByCode <- dplyr::filter(NCCwide, NCCwide$CombCode %in% validLocs) %>%
+    split(., .$CombCode)
 
-validRegionMats <- lapply(seq_along(regionReduce), function(matList, i, vecList) {
-    matList[[i]][vecList[[i]]]
-}, matList = regionReduce, vecList = IDbyRegion)
+for (i in seq_along(dataByCode)) {
+    dataByCode[[i]] <- dataByCode[[i]][dataByCode[[i]]$ID %in% IDbyRegion[[i]], ]
+}
 
-names(validRegionMats) <- names(IDbyRegion)
-
-validMats <- lapply(validRegionMats, function(loc) {
-    dplyr::bind_rows(loc, .id = "ID")
-})
+dataByCode <- dplyr::bind_rows(dataByCode)
