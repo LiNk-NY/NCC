@@ -17,11 +17,15 @@ hitVec <- apply(vapply(infoFrame[["pattern"]], function(x) {
     }, logical(length(colNames))), 1, any)
 names(hitVec) <- colNames
 
+## Other variables
+restVars <- NCCdf[, colNames[!hitVec]]
+
 ## Check pattern is picking up correct targets
 (pickedUp <- Filter(isTRUE, hitVec))
 
 ## Check left out
-setdiff(names(NCCdf), names(pickedUp))
+identical(setdiff(names(NCCdf), names(pickedUp)), colNames[!hitVec])
+colNames[!hitVec]
 
 ## Obtain hit matrix for matching patterns in variable names
 namesHitMat <- vapply(infoFrame[["pattern"]], function(x) grepl(x, colNames),
@@ -47,7 +51,7 @@ locationDat <- as.data.frame(locationDat, stringsAsFactors = FALSE)
 colnames(locationDat) <- unique(infoFrame[["variableName"]])
 locationDat$Code <- rownames(locationDat)
 locationDat$Status <- factor(locationDat$Status,
-                      levels = c("Active", "Transitional", "Inactive"),
+                      levels = c("ACTIVE", "TRANSITIONAL", "INACTIVE"),
                       ordered = TRUE)
 locationDat$CombCode <-  gsub("(^[235]*.)([1-3])([A-Z]*.)", "\\1X\\3",
                             locationDat$Code) %>%
@@ -83,10 +87,9 @@ regionID <- lapply(regions, function(reg) split(NCCdf[, reg], NCCdf$ID))
 validCystMatrix(regionID[[1L]][[1]])
 
 ## Check how many code chunks per region and ID are valid
-lapply(regionID, function(reg) { sum(vapply(reg, function(x) {validCystMatrix(x)}, logical(1L)))})
-
-## Breakdown valid chunks by region and ID
-lapply(regionID, function(reg) { vapply(reg, function(x) {validCystMatrix(x)}, logical(1L))})
+lapply(regionID, function(reg) {
+    sum(vapply(reg, function(x) {validCystMatrix(x)}, logical(1L)))
+    })
 
 ## Get IDs that have a valid matrix
 validIDs <- lapply(regionID, function(reg) {
@@ -106,7 +109,20 @@ dataByCode <- dplyr::filter(NCCwide, NCCwide$CombCode %in% validLocs) %>%
     split(., .$CombCode)
 
 for (i in seq_along(dataByCode)) {
-    dataByCode[[i]] <- dataByCode[[i]][dataByCode[[i]]$ID %in% IDbyRegion[[i]], ]
+    dataByCode[[i]] <- dataByCode[[i]][dataByCode[[i]]$ID %in%
+                                           IDbyRegion[[i]], ]
 }
 
 dataByCode <- dplyr::bind_rows(dataByCode)
+
+dataByCode <- dataByCode %>% mutate(IDVAR = paste0(ID, "_", MONTH))
+
+restVars <- restVars %>% mutate(IDVAR = paste0(ID, "_", MONTH))
+
+FullNCC <- left_join(dataByCode, restVars %>% select(-c(MONTH, ID)),
+                     by = c("IDVAR" = "IDVAR"))
+
+FullNCC <- FullNCC %>% select(-c(IDVAR, CombCode)) %>%
+    mutate(ID = type.convert(ID), MONTH = type.convert(MONTH))
+
+readr::write_csv(FullNCC, "data/FullNCC.csv")

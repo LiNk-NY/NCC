@@ -4,4 +4,5 @@
 .Ruserdata
 data/*.[Ss][Aa][Vv]
 *.[Rr][Dd][Ss]
+*.csv
 .httr-oauth
