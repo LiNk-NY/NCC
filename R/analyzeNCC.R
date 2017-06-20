@@ -126,3 +126,10 @@ FullNCC <- FullNCC %>% select(-c(IDVAR, CombCode)) %>%
     mutate(ID = type.convert(ID), MONTH = type.convert(MONTH))
 
 readr::write_csv(FullNCC, "data/FullNCC.csv")
+
+## LOCATION var should have X values (2AXA)
+## SORT by MONTH
+
+## Long and skinny > keep ID MONTH STATUS (drug)
+## Status will have 4 levels `1:4` active, trans, inactive, dissolved
+## NA where NA
