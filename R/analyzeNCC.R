@@ -76,9 +76,13 @@ unite(NCCdf[, region], IDMONTH, c(ID, MONTH)) %>%
 })
 
 dataByLOC <- dplyr::bind_rows(dataByLOC)
+
 NCCFULL <- left_join(dataByLOC, locationDat, by = c("LOCATION" = "Code"))
 
-NCCwide <- spread(NCCFULL, key = Status, value = COUNT)
+NCCwide <- NCCFULL %>% unite(IDLOC, c(ID, CombCode)) %>% select(-LOCATION) %>%
+    spread(key = Status, value = COUNT) %>%
+    mutate(MONTH = type.convert(MONTH)) %>%
+    arrange(IDLOC, MONTH) %>% separate(IDLOC, c("ID", "CombCode"))
 
 ## Example data chunk by region
 regionID <- lapply(regions, function(reg) split(NCCdf[, reg], NCCdf$ID))
@@ -87,9 +91,9 @@ regionID <- lapply(regions, function(reg) split(NCCdf[, reg], NCCdf$ID))
 validCystMatrix(regionID[[1L]][[1]])
 
 ## Check how many code chunks per region and ID are valid
-lapply(regionID, function(reg) {
-    sum(vapply(reg, function(x) {validCystMatrix(x)}, logical(1L)))
-    })
+# lapply(regionID, function(reg) {
+#     sum(vapply(reg, function(x) {validCystMatrix(x)}, logical(1L)))
+#     })
 
 ## Get IDs that have a valid matrix
 validIDs <- lapply(regionID, function(reg) {
@@ -120,15 +124,11 @@ dataByCode <- dataByCode %>% mutate(IDVAR = paste0(ID, "_", MONTH))
 restVars <- restVars %>% mutate(IDVAR = paste0(ID, "_", MONTH))
 
 FullNCC <- left_join(dataByCode, restVars %>% select(-c(MONTH, ID)),
-                     by = c("IDVAR" = "IDVAR"))
+                     by = c("IDVAR" = "IDVAR")) %>% select(-IDVAR)
 
-FullNCC <- FullNCC %>% select(-c(IDVAR, CombCode)) %>%
-    mutate(ID = type.convert(ID), MONTH = type.convert(MONTH))
+FullNCC <- FullNCC %>%  mutate(ID = type.convert(ID))
 
 readr::write_csv(FullNCC, "data/FullNCC.csv")
-
-## LOCATION var should have X values (2AXA)
-## SORT by MONTH
 
 ## Long and skinny > keep ID MONTH STATUS (drug)
 ## Status will have 4 levels `1:4` active, trans, inactive, dissolved
