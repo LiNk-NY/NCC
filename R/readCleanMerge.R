@@ -27,6 +27,7 @@ for (i in seq_along(dataList)) {
 }
 
 drugVar <- dataList[[1]][, c("ID", "drug", "drug_gro")]
+readr::write_csv(drugVar, "data/drugVars.csv")
 
 ## Remove extra variables
 dataList[[1]] <- dataList[[1]][, -which(names(dataList[[1]]) %in% c("drug", "drug_gro"))]
