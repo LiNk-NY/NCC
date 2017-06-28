@@ -90,11 +90,6 @@ regionID <- lapply(regions, function(reg) split(NCCdf[, reg], NCCdf$ID))
 ## Function from validation file
 validCystMatrix(regionID[[1L]][[1]])
 
-## Check how many code chunks per region and ID are valid
-# lapply(regionID, function(reg) {
-#     sum(vapply(reg, function(x) {validCystMatrix(x)}, logical(1L)))
-#     })
-
 ## Get IDs that have a valid matrix
 validIDs <- lapply(regionID, function(reg) {
     names(Filter(isTRUE, vapply(reg,
