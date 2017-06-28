@@ -130,4 +130,5 @@ drug <- readr::read_csv("data/drugVars.csv")
 
 FullNCC <- left_join(FullNCC, drug, by = "ID")
 
-readr::write_csv(FullNCC, "data/FullNCC.csv")
+# readr::write_csv(FullNCC, "data/FullNCC.csv")
+haven::write_sav(FullNCC, "data/FullNCC.sav")
