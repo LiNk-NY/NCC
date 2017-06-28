@@ -43,3 +43,12 @@ validCystMatrix <- function(x) {
     return(res)
 }
 
+.stageRecode <- function(x) {
+    if (sum(x, na.rm = TRUE) == 1L)
+        res <- which(x == 1L)
+    else if (any(is.na(x)))
+        res <- NA
+    else if (all(x == 0L))
+        res <- 4L
+    res
+}
