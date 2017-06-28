@@ -67,7 +67,7 @@ regions <- arrange(locationDat, Tissue, Status) %>% select(-Tissue) %>%
 colsInterest <- lapply(regions, function(x) c("ID", "MONTH", x))
 
 ## Long and skinny format
-## FIX HERE
+
 dataByLOC <- lapply(colsInterest, function(region) {
 unite(NCCdf[, region], IDMONTH, c(ID, MONTH)) %>%
     gather(LOCATION, COUNT, -IDMONTH) %>%
@@ -126,10 +126,13 @@ restVars <- restVars %>% mutate(IDVAR = paste0(ID, "_", MONTH))
 FullNCC <- left_join(dataByCode, restVars %>% select(-c(MONTH, ID)),
                      by = c("IDVAR" = "IDVAR")) %>% select(-IDVAR)
 
-FullNCC <- FullNCC %>%  mutate(ID = type.convert(ID))
+FullNCC <- FullNCC %>%  mutate(ID = type.convert(ID))  %>%
+    add_column(STATUS = apply(
+        FullNCC[, c("ACTIVE", "TRANSITIONAL", "INACTIVE")], 1L,
+        function(x) {.stageRecode(x)}), .after = "Tissue")
+
+drug <- readr::read_csv("data/drugVars.csv")
+
+FullNCC <- left_join(FullNCC, drug, by = "ID")
 
 readr::write_csv(FullNCC, "data/FullNCC.csv")
-
-## Long and skinny > keep ID MONTH STATUS (drug)
-## Status will have 4 levels `1:4` active, trans, inactive, dissolved
-## NA where NA
