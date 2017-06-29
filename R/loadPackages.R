@@ -9,4 +9,5 @@ suppressPackageStartupMessages({
     library(stringdist)
     library(purrr)
     library(tidyr)
+    library(tibble)
 })
