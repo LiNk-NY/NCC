@@ -8,8 +8,9 @@ library(dplyr)
 
 ## Authenticate to Dropbox API at FIRST RUN
 # drop_auth()
-# drop_acc() %>% select(uid, display_name, email_verified, quota_info.quota)
+# drop_acc()
 
+# Not working -- API broken?
 dataFiles <- rdrop2::drop_dir("NCC_PROJECT/DATA")[["path"]]
 savData <- grepl("^[^A].+\\.sav$", basename(dataFiles))
 dataFiles <- dataFiles[savData]
@@ -22,5 +23,6 @@ invisible(lapply(dataFiles, function(file) {
 })
 )
 
-## Rename file
+## Rename files
 file.rename("data/Baseline SCan & Drug.sav", "data/BaselineScanDrug.sav")
+file.rename("data/24 Month Scan SPSS-updated-9.24.17.sav", "data/M24Scan.sav")
