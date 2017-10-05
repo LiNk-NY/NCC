@@ -8,7 +8,7 @@ source("R/loadPackages.R")
 source("R/helperData.R")
 
 ## Read NCC SAV datasets
-dataList <- list.files("data", pattern = "\\.sav$", full.names = TRUE)
+dataList <- list.files("data", pattern = "^[BM].*\\.sav$", full.names = TRUE)
 names(dataList) <- gsub(".sav", "", basename(dataList), fixed = TRUE)
 
 dataList <- lapply(dataList, read_spss)
