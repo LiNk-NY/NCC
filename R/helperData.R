@@ -2,9 +2,10 @@
 
 ## A patterns CharacterList for cleaning names in data
 endings <- IRanges::CharacterList(
-    Baseline = paste(c("YN$", "y$", "Ca$"), collapse = "|"),
+    BaselineScanDrug = paste(c("YN$", "y$", "Ca$"), collapse = "|"),
     M12Scan = paste(c("YNY$", "Y$", "YY$", "CY$", "M12$"), collapse = "|"),
     M1Scan = paste(c("YN1$", "1$", "Y1$", "C1$", "M1$"), collapse = "|"),
+    M24Scan = "",
     M6Scan = paste(c("YN6$", "6$", "Y6$", "C6$", "M6$"), collapse = "|"))
 
 ## Create codebook data frame for extracting data from variable names
