@@ -63,14 +63,32 @@ for (i in seq_along(timeVaryingNames)) {
                                  ignore.case = TRUE)
 }
 
-## Check all vars match across datasets
-stopifnot(!length(Reduce(outersect, timeVaryingNames)))
+commentIdx <- unique(vapply(timeVaryingNames,
+    function(x) { which(x == "COMME") }, numeric(1L)))
 
+aftComm <- endoapply(timeVaryingNames, function(x) x[commentIdx:length(x)])
+timeVaryingNames <- timeVaryingNames[!timeVaryingNames %in% aftComm]
+
+## Check that all names are in each other element
+identical(length(Reduce(intersect, timeVaryingNames)),
+    unique(lengths(timeVaryingNames)))
+
+## Compare first element to the rest, should all be identical
+all(vapply(timeVaryingNames[seq_along(timeVaryingNames)[-1]],
+    function(x) identical(x, timeVaryingNames[[1L]]), logical(1L)))
+
+stopifnot(identical(names(endings), names(timeStampEnd)))
 newNames <- S4Vectors::mendoapply(function(patterns, varnames) {
     gsub(patterns, "", varnames, ignore.case = FALSE) ## Cases correct
 }, patterns = endings, varnames = timeStampEnd)
 
-unmatched <- Reduce(outersect, newNames)
+keepName <- Reduce(intersect, newNames)
+commonNames <- Filter(length, newNames[!newNames %in% keepName])
+
+inAllData <- Reduce(intersect, commonNames)
+differs <- commonNames[!commonNames %in% inAllData]
+## Check if all names in M1, M6, & M12 are equal
+identical(unique(lengths(differs)), length(Reduce(intersect, differs[2:4])))
 
 ## Look at this list (includes coded variables, e.g., '2A2B1')
 do.call(cbind, split(unmatched, c(TRUE, FALSE)))
@@ -168,7 +186,7 @@ newDataList <- lapply(seq_along(dataList), function(i, dataset) {
 
 names(newDataList) <- names(dataList)
 
-timeNumeric <- c(BSE = 0L, SYE = 12L, S1E = 1L, S6E = 6L)
+timeNumeric <- c(BSE = 0L, SYE = 12L, S1E = 1L, S6E = 6L, SLE = 24L)
 
 ## Check any variable with the name month already in data
 stopifnot(!any(tolower(names(newDataList[[1]])) == "month"))
