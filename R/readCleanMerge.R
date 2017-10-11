@@ -30,7 +30,8 @@ drugVar <- dataList[[1]][, c("ID", "drug", "drug_gro")]
 # readr::write_csv(drugVar, "data/drugVars.csv")
 
 ## Remove extra variables
-dataList[[1]] <- dataList[[1]][, -which(names(dataList[[1]]) %in% c("drug", "drug_gro"))]
+dataList[[1]] <-
+    dataList[[1]][, -which(names(dataList[[1]]) %in% c("drug", "drug_gro"))]
 
 ## Convenience function for getting the outersect
 outersect <- function(x, y) {
@@ -39,43 +40,43 @@ outersect <- function(x, y) {
 
 dataNames <- CharacterList(lapply(dataList, names))
 
-timeStampStart <- LogicalList(lapply(dataNames, function(x) {
+haveTimeStamp <- LogicalList(lapply(dataNames, function(x) {
     grepl("^S[16Y]E|^BSE|^SLE", x)
 }))
 
-timeVaryingNames <- dataNames[timeStampStart]
+timeNames <- dataNames[haveTimeStamp]
 
-timeStampEnd <- dataNames[!timeStampStart]
+timeStampEnd <- dataNames[!haveTimeStamp]
 
 ## Sample time stamped names and take the first 3 characters (time indicator)
-timePoints <- vapply(timeVaryingNames,
+timePoints <- vapply(timeNames,
                     function(nameList) {
                         TimeName <- sample(nameList, size = 1L)
                         substr(TimeName, 1, 3)
                     }, character(1L))
 
 stopifnot(identical(names(dataNames), names(timePoints)))
-stopifnot(identical(names(timeVaryingNames), names(timePoints)))
+stopifnot(identical(names(timeNames), names(timePoints)))
 
 ## Remove time indicators from variable names
-for (i in seq_along(timeVaryingNames)) {
-    timeVaryingNames[[i]] <- gsub(timePoints[[i]], "", timeVaryingNames[[i]],
+for (i in seq_along(timeNames)) {
+    timeNames[[i]] <- gsub(timePoints[[i]], "", timeNames[[i]],
                                  ignore.case = TRUE)
 }
 
-commentIdx <- unique(vapply(timeVaryingNames,
+commentIdx <- unique(vapply(timeNames,
     function(x) { which(x == "COMME") }, numeric(1L)))
 
-aftComm <- endoapply(timeVaryingNames, function(x) x[commentIdx:length(x)])
-timeVaryingNames <- timeVaryingNames[!timeVaryingNames %in% aftComm]
+aftComm <- endoapply(timeNames, function(x) x[commentIdx:length(x)])
+timeNames <- timeNames[!timeNames %in% aftComm]
 
 ## Check that all names are in each other element
-identical(length(Reduce(intersect, timeVaryingNames)),
-    unique(lengths(timeVaryingNames)))
+identical(length(Reduce(intersect, timeNames)),
+    unique(lengths(timeNames)))
 
 ## Compare first element to the rest, should all be identical
-all(vapply(timeVaryingNames[seq_along(timeVaryingNames)[-1]],
-    function(x) identical(x, timeVaryingNames[[1L]]), logical(1L)))
+all(vapply(timeNames[seq_along(timeNames)[-1]],
+    function(x) identical(x, timeNames[[1L]]), logical(1L)))
 
 stopifnot(identical(names(endings), names(timeStampEnd)))
 newNames <- S4Vectors::mendoapply(function(patterns, varnames) {
@@ -174,8 +175,8 @@ reNewNames <- IRanges::splitAsList(LongNewNames[[1]], LongNewNames[[2]])
 ## Check all vars match across datasets
 stopifnot(!length(Reduce(outersect, reNewNames)))
 
-dataNames[!timeStampStart] <- reNewNames
-dataNames[timeStampStart] <- timeVaryingNames
+dataNames[!haveTimeStamp] <- reNewNames
+dataNames[haveTimeStamp] <- timeNames
 
 stopifnot(!length(Reduce(outersect, dataNames)))
 
