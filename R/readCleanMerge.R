@@ -13,6 +13,9 @@ names(dataList) <- gsub(".sav", "", basename(dataList), fixed = TRUE)
 
 dataList <- lapply(dataList, read_spss)
 
+
+# Cleaning column names ---------------------------------------------------
+
 for (i in seq_along(dataList)) {
 ## remove filter_$ variables
     if ("filter_$" %in% names(dataList[[i]])) {
@@ -41,12 +44,12 @@ outersect <- function(x, y) {
 dataNames <- CharacterList(lapply(dataList, names))
 
 haveTimeStamp <- LogicalList(lapply(dataNames, function(x) {
-    grepl("^S[16Y]E|^BSE|^SLE", x)
+    grepl("^S[16Y]E|^BSE|^SLE", x) & !grepl("COMME", x, fixed = TRUE)
 }))
 
 timeNames <- dataNames[haveTimeStamp]
 
-timeStampEnd <- dataNames[!haveTimeStamp]
+notTimeNames <- dataNames[!haveTimeStamp]
 
 ## Sample time stamped names and take the first 3 characters (time indicator)
 timePoints <- vapply(timeNames,
@@ -58,127 +61,25 @@ timePoints <- vapply(timeNames,
 stopifnot(identical(names(dataNames), names(timePoints)))
 stopifnot(identical(names(timeNames), names(timePoints)))
 
+cleanNames <- CharacterList(vector("list", 5L))
+names(cleanNames) <- names(timeNames)
+
 ## Remove time indicators from variable names
 for (i in seq_along(timeNames)) {
-    timeNames[[i]] <- gsub(timePoints[[i]], "", timeNames[[i]],
+    cleanNames[[i]] <- gsub(timePoints[[i]], "", timeNames[[i]],
                                  ignore.case = TRUE)
 }
 
-commentIdx <- unique(vapply(timeNames,
-    function(x) { which(x == "COMME") }, numeric(1L)))
+dataNames[haveTimeStamp] <- cleanNames
 
-aftComm <- endoapply(timeNames, function(x) x[commentIdx:length(x)])
-timeNames <- timeNames[!timeNames %in% aftComm]
+intNames <- Reduce(intersect, cleanNames)
 
-## Check that all names are in each other element
-identical(length(Reduce(intersect, timeNames)),
-    unique(lengths(timeNames)))
+## Take only names in all datasets
+logicalSub <- dataNames %in% intNames
 
-## Compare first element to the rest, should all be identical
-all(vapply(timeNames[seq_along(timeNames)[-1]],
-    function(x) identical(x, timeNames[[1L]]), logical(1L)))
+# Loading data ------------------------------------------------------------
 
-stopifnot(identical(names(endings), names(timeStampEnd)))
-newNames <- S4Vectors::mendoapply(function(patterns, varnames) {
-    gsub(patterns, "", varnames, ignore.case = FALSE) ## Cases correct
-}, patterns = endings, varnames = timeStampEnd)
-
-keepName <- Reduce(intersect, newNames)
-commonNames <- Filter(length, newNames[!newNames %in% keepName])
-
-inAllData <- Reduce(intersect, commonNames)
-differs <- commonNames[!commonNames %in% inAllData]
-## Check if all names in M1, M6, & M12 are equal
-identical(unique(lengths(differs)), length(Reduce(intersect, differs[2:4])))
-
-## Look at this list (includes coded variables, e.g., '2A2B1')
-do.call(cbind, split(unmatched, c(TRUE, FALSE)))
-
-lvDist <- stringdistmatrix(tolower(unmatched), method = "lv")
-shortDist <- as.matrix(lvDist) == 1L | as.matrix(lvDist) == 2L
-validPairs <- reshape2::melt(shortDist)
-matIndex <- validPairs[validPairs[[3]], 1:2]
-
-first <- apply(matIndex, 1, function(x) x[1] < x[2])
-closeIdx <- matIndex[first,]
-closeNames <- cbind.data.frame(first = unmatched[closeIdx[[1]]],
-                                 second = unmatched[closeIdx[[2]]],
-                                 stringsAsFactors = FALSE)
-closeNames[, "ncharfirst"] <- nchar(closeNames[[1]])
-closeNames[, "ncharsecond"] <- nchar(closeNames[[2]])
-## Create a column indicating longer word
-closeNames[, "longer"] <- apply(X = closeNames[, c("ncharfirst", "ncharsecond")],
-                                  MARGIN = 1,
-                                  FUN = function(x) {
-                                      if (x[1] == x[2])
-                                          NA_integer_
-                                      else
-                                          which.max(x)
-                                  })
-## Calculate distances for pairs
-closeNames[, "levDist"] <- stringdist(closeNames[["first"]],
-                                        closeNames[["second"]], method = "lv")
-
-## Make NA words with a high distance
-closeNames[which(closeNames[, "levDist"] == 3), "longer"] <- NA_integer_
-
-closeNames <- closeNames[complete.cases(closeNames), ]
-
-shorter <- closeNames[, "longer"] %% 2
-shorter[shorter == 0L] <- -1
-closeNames[, "shorter"] <- closeNames[["longer"]] + shorter
-
-## Fix rownames
-closeNames <- data.frame(closeNames, row.names = seq_len(nrow(closeNames)),
-                         stringsAsFactors = FALSE)
-
-## Create a corrections data.frame for mapping short to long variable names
-corrections <- cbind.data.frame(
-    short = vapply(seq_len(nrow(closeNames)),
-                   function(i) {
-                       closeNames[i, closeNames[["shorter"]][i]]
-                   }, character(1L)),
-    long = vapply(seq_len(nrow(closeNames)),
-                  function(i) {
-                      closeNames[i, closeNames[["longer"]][i]]
-                  }, character(1L)),
-    stringsAsFactors = FALSE)
-
-## Manual entry
-corrections <- rbind(corrections,
-                     data.frame(short = "totcyst", long = "TotCyst"))
-
-LongNewNames <- cbind.data.frame(varName = unlist(newNames),
-                                 group = rep(names(newNames),
-                                             lengths(newNames)),
-                                 row.names = NULL,
-                                 stringsAsFactors = FALSE)
-
-isShort <- vapply(corrections$short, `==`,
-                  logical(nrow(LongNewNames)),
-                  LongNewNames$varName)
-stopifnot(!any(rowSums(isShort) > 1))
-
-replaceIdx <- apply(isShort, 1, which.max)
-replaceIdx[replaceIdx == 1L] <- 0L
-truePos <- which(isShort[, 1])
-replaceIdx[truePos] <- 1L
-
-NonZero <- replaceIdx != 0L
-replaceVec <- corrections$long[replaceIdx[NonZero]]
-
-stopifnot(identical(length(replaceVec), sum(NonZero)))
-
-LongNewNames[NonZero, 1] <- corrections$long[replaceIdx[NonZero]]
-reNewNames <- IRanges::splitAsList(LongNewNames[[1]], LongNewNames[[2]])
-
-## Check all vars match across datasets
-stopifnot(!length(Reduce(outersect, reNewNames)))
-
-dataNames[!haveTimeStamp] <- reNewNames
-dataNames[haveTimeStamp] <- timeNames
-
-stopifnot(!length(Reduce(outersect, dataNames)))
+## First, rename datasets with dataNames elements
 
 newDataList <- lapply(seq_along(dataList), function(i, dataset) {
     names(dataset[[i]]) <- dataNames[[i]]
@@ -186,6 +87,9 @@ newDataList <- lapply(seq_along(dataList), function(i, dataset) {
 }, dataset = dataList)
 
 names(newDataList) <- names(dataList)
+
+## Second, Subset datasets with logicalSub
+newDataList <- Map(function(x, y) { x[, y] }, x = newDataList, y = logicalSub)
 
 timeNumeric <- c(BSE = 0L, SYE = 12L, S1E = 1L, S6E = 6L, SLE = 24L)
 
