@@ -123,3 +123,4 @@ NCCdf[, charVars] <- readr::type_convert(NCCdf[, charVars])
 
 ## Serialize and store data
 # readr::write_rds(NCCdf, path = "data/NCCFULL.rds")
+# readr::write_csv(NCCdf, path = "data/NCCFULL.csv")
