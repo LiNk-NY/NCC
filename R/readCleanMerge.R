@@ -68,6 +68,8 @@ for (i in seq_along(timeNames)) {
 dataNames[haveTimeStamp] <- cleanNames
 
 intNames <- Reduce(intersect, cleanNames)
+## Add ID to intNames
+intNames <- c("ID", intNames)
 
 ## Take only names in all datasets
 logicalSub <- dataNames %in% intNames
@@ -120,4 +122,4 @@ charVars <- vapply(NCCdf, is.character, logical(1L))
 NCCdf[, charVars] <- readr::type_convert(NCCdf[, charVars])
 
 ## Serialize and store data
-# readr::write_rds(NCCdf, path = "data/NCCmerged.rds")
+# readr::write_rds(NCCdf, path = "data/NCCFULL.rds")
