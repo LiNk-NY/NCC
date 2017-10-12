@@ -36,11 +36,6 @@ drugVar <- dataList[[1]][, c("ID", "drug", "drug_gro")]
 dataList[[1]] <-
     dataList[[1]][, -which(names(dataList[[1]]) %in% c("drug", "drug_gro"))]
 
-## Convenience function for getting the outersect
-outersect <- function(x, y) {
-    sort(c(setdiff(x, y), setdiff(y, x)))
-}
-
 dataNames <- CharacterList(lapply(dataList, names))
 
 haveTimeStamp <- LogicalList(lapply(dataNames, function(x) {
