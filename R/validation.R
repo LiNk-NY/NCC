@@ -34,7 +34,7 @@
 
 ## Create checker function for data chunks (region by ID)
 validCystMatrix <- function(x) {
-    stopifnot(nrow(x) == 4L)
+    stopifnot(nrow(x) == 5L) # Time points
     if (.notAllNA(x)) {
         res <- all(.sumRowsGT1(x), .totalSumNotZero(x), .valueCheck(x))
     } else {

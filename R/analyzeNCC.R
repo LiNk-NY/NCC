@@ -8,7 +8,7 @@ source("R/helperData.R")
 source("R/validation.R")
 
 ## Load clean data
-NCCdf <- readr::read_rds("data/NCCmerged.rds")
+NCCdf <- readr::read_rds("data/NCCFULL.rds")
 
 colNames <- names(NCCdf)
 
@@ -130,5 +130,6 @@ drug <- readr::read_csv("data/drugVars.csv")
 
 FullNCC <- left_join(FullNCC, drug, by = "ID")
 
-# readr::write_csv(FullNCC, "data/FullNCC.csv")
-haven::write_sav(FullNCC, "data/FullNCC.sav")
+## Replace wide dataset
+# readr::write_csv(FullNCC, "data/NCCFULL.csv")
+haven::write_sav(FullNCC, "data/NCCFULL.sav")
