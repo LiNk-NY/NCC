@@ -132,4 +132,4 @@ FullNCC <- left_join(FullNCC, drug, by = "ID")
 
 ## Replace wide dataset
 # readr::write_csv(FullNCC, "data/NCCFULL.csv")
-haven::write_sav(FullNCC, "data/NCCFULL.sav")
+# haven::write_sav(FullNCC, "data/NCCFULL.sav")
