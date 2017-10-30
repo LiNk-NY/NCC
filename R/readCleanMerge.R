@@ -107,10 +107,17 @@ for (i in seq_along(newDataList)) {
 }
 
 ## convert NA to 0L
-newDataList[["M24Scan"]] <- newDataList[["M24Scan"]] %>%
-    mutate_at(vars(Q2A1A:Q175),
+newDataList[["M24Scan"]] <-
+    newDataList[["M24Scan"]] %>%
+    mutate_at(vars(Q2A1A:Q168, Q171:Q175),
         funs(ifelse(is.na(readr::parse_integer(.)), 0L, .)))
 
+## convert character to integer
+newDataList[["M12Scan"]][["Q9"]] <-
+    readr::parse_integer(newDataList[["M12Scan"]][["Q9"]])
+## convert character to integer
+newDataList[["M12Scan"]][["Q10"]] <-
+    readr::parse_integer(newDataList[["M12Scan"]][["Q10"]])
 
 ## Bind all time points
 NCCdata <- dplyr::bind_rows(newDataList)
