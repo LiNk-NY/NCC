@@ -62,8 +62,11 @@ names(cleanNames) <- names(timeNames)
 for (i in seq_along(timeNames)) {
     cleanNames[[i]] <- gsub(timePoints[[i]], "", timeNames[[i]],
                                  ignore.case = TRUE)
+    ## Prepend Q letter to variable names for convenience
+    cleanNames[[i]] <- gsub("(^[0-9])", "Q\\1", cleanNames[[i]])
 }
 
+## Replace names with uniform names
 dataNames[haveTimeStamp] <- cleanNames
 
 intNames <- Reduce(intersect, cleanNames)
@@ -72,6 +75,9 @@ intNames <- c("ID", intNames)
 
 ## Take only names in all datasets
 logicalSub <- dataNames %in% intNames
+
+## The number of intersecting names in total (202)
+sum(logicalSub)
 
 # Loading data ------------------------------------------------------------
 
