@@ -11,8 +11,7 @@ source("R/helperData.R")
 dataList <- list.files("data", pattern = "^[BM].*\\.sav$", full.names = TRUE)
 names(dataList) <- gsub(".sav", "", basename(dataList), fixed = TRUE)
 
-dataList <- lapply(dataList, read_spss)
-
+dataList <- lapply(dataList, function(file) readr::type_convert(haven::read_spss(file)))
 
 # Cleaning column names ---------------------------------------------------
 
@@ -100,6 +99,11 @@ for (i in seq_along(newDataList)) {
                                                        nrow(newDataList[[i]])),
                                            .after = 1)
 }
+
+## convert NA to 0L
+select(newDataList[["M24Scan"]], `2A1A`:`175`) %>%
+    purrr::map_df(readr::parse_integer) %>% mutate_all(funs(ifelse(is.na(.), 0L, .)))
+
 ## Bind all time points
 NCCdata <- dplyr::bind_rows(newDataList)
 
