@@ -107,8 +107,10 @@ for (i in seq_along(newDataList)) {
 }
 
 ## convert NA to 0L
-select(newDataList[["M24Scan"]], `2A1A`:`175`) %>%
-    purrr::map_df(readr::parse_integer) %>% mutate_all(funs(ifelse(is.na(.), 0L, .)))
+newDataList[["M24Scan"]] <- newDataList[["M24Scan"]] %>%
+    mutate_at(vars(Q2A1A:Q175),
+        funs(ifelse(is.na(readr::parse_integer(.)), 0L, .)))
+
 
 ## Bind all time points
 NCCdata <- dplyr::bind_rows(newDataList)
