@@ -88,7 +88,7 @@ names(newDataList) <- names(dataList)
 ## Second, Subset datasets with logicalSub
 newDataList <- Map(function(x, y) { x[, y] }, x = newDataList, y = logicalSub)
 
-timeNumeric <- c(BSE = 0L, SYE = 12L, S1E = 1L, S6E = 6L, SLE = 24L)
+timeNumeric <- c(BSE = 0L, SYE = 12L, S1E = 1L, SLE = 24L, S6E = 6L)
 
 ## Check any variable with the name month already in data
 stopifnot(!any(tolower(names(newDataList[[1]])) == "month"))
