@@ -53,9 +53,9 @@ locationDat$Code <- rownames(locationDat)
 locationDat$Status <- factor(locationDat$Status,
                       levels = c("ACTIVE", "TRANSITIONAL", "INACTIVE"),
                       ordered = TRUE)
-locationDat$CombCode <-  gsub("(^[235]*.)([1-3])([A-Z]*.)", "\\1X\\3",
+locationDat$CombCode <-  gsub("(^Q[235]*.)([1-3])([A-Z]*.)", "\\1X\\3",
                             locationDat$Code) %>%
-                                gsub("(^[67][A-F])([1-3])", "\\1X", .)
+                                gsub("(^Q[67][A-F])([1-3])", "\\1X", .)
 locationDat$Area[locationDat$Region == "PosteriorFossa"] <- "BS/Cerebellum"
 locationDat <- locationDat[!is.na(locationDat$Status) &
                                grepl("X", locationDat$CombCode), ]
