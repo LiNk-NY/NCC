@@ -119,7 +119,7 @@ dataByCode <- dataByCode %>% mutate(IDVAR = paste0(ID, "_", MONTH))
 restVars <- restVars %>% mutate(IDVAR = paste0(ID, "_", MONTH))
 
 FullNCC <- left_join(dataByCode, restVars %>% select(-c(MONTH, ID)),
-                     by = c("IDVAR" = "IDVAR")) %>% select(-IDVAR)
+                     by = "IDVAR") %>% select(-IDVAR)
 
 FullNCC <- FullNCC %>%  mutate(ID = type.convert(ID))  %>%
     add_column(STATUS = apply(
@@ -129,6 +129,9 @@ FullNCC <- FullNCC %>%  mutate(ID = type.convert(ID))  %>%
 drug <- readr::read_csv("data/drugVars.csv")
 
 NCClong <- left_join(FullNCC, drug, by = "ID")
+
+NCClong <- NCClong %>% mutate(IDLOC = paste0(ID, "_", LocCode)) %>%
+    select(ID, LocCode, IDLOC, everything())
 
 ## Replace wide dataset
 # readr::write_csv(NCClong, "data/NCClong.csv")
