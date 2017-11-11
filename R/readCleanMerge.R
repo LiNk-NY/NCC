@@ -129,12 +129,12 @@ NCCdata <- dplyr::arrange(NCCdata, ID, MONTH)
 # group_by(NCCdata, ID) %>% summarize(N = n())
 
 # Impute missing timepoints
-fullNCC <- split(NCCdata, NCCdata[["ID"]]) %>%
+NCClist <- split(NCCdata, NCCdata[["ID"]]) %>%
     map(~ suppressMessages(right_join(.x,
                      tibble(ID = rep(unique(.x[["ID"]]), length(timeNumeric)),
                             MONTH = sort(timeNumeric)))))
 
-NCCdf <- dplyr::bind_rows(fullNCC)
+NCCdf <- dplyr::bind_rows(NCClist)
 
 ## Type convert characters to integers where possible
 charVars <- vapply(NCCdf, is.character, logical(1L))
