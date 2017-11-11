@@ -53,15 +53,15 @@ locationDat$Code <- rownames(locationDat)
 locationDat$Status <- factor(locationDat$Status,
                       levels = c("ACTIVE", "TRANSITIONAL", "INACTIVE"),
                       ordered = TRUE)
-locationDat$CombCode <-  gsub("(^Q[235]*.)([1-3])([A-Z]*.)", "\\1X\\3",
+locationDat$LocCode <-  gsub("(^Q[235]*.)([1-3])([A-Z]*.)", "\\1X\\3",
                             locationDat$Code) %>%
                                 gsub("(^Q[67][A-F])([1-3])", "\\1X", .)
 locationDat$Area[locationDat$Region == "PosteriorFossa"] <- "BS/Cerebellum"
 locationDat <- locationDat[!is.na(locationDat$Status) &
-                               grepl("X", locationDat$CombCode), ]
+                               grepl("X", locationDat$LocCode), ]
 
 regions <- arrange(locationDat, Tissue, Status) %>% select(-Tissue) %>%
-    split(., list(.$Region, .$Area, .$CombCode)) %>%
+    split(., list(.$Region, .$Area, .$LocCode)) %>%
         Filter(function(x) nrow(x) != 0L, .) %>% map(function(x) x$Code)
 
 colsInterest <- lapply(regions, function(x) c("ID", "MONTH", x))
@@ -79,10 +79,10 @@ dataByLOC <- dplyr::bind_rows(dataByLOC)
 
 NCCFULL <- left_join(dataByLOC, locationDat, by = c("LOCATION" = "Code"))
 
-NCCwide <- NCCFULL %>% unite(IDLOC, c(ID, CombCode)) %>% select(-LOCATION) %>%
+NCCwide <- NCCFULL %>% unite(IDLOC, c(ID, LocCode)) %>% select(-LOCATION) %>%
     spread(key = Status, value = COUNT) %>%
     mutate(MONTH = type.convert(MONTH)) %>%
-    arrange(IDLOC, MONTH) %>% separate(IDLOC, c("ID", "CombCode"))
+    arrange(IDLOC, MONTH) %>% separate(IDLOC, c("ID", "LocCode"))
 
 ## Example data chunk by region
 regionID <- lapply(regions, function(reg) split(NCCdf[, reg], NCCdf$ID))
@@ -104,8 +104,8 @@ validLocs <- vapply(strsplit(names(IDbyRegion), split = "\\."),
                     function(vec) vec[[3]], character(1L))
 names(validLocs) <- names(IDbyRegion)
 
-dataByCode <- dplyr::filter(NCCwide, NCCwide$CombCode %in% validLocs) %>%
-    split(., .$CombCode)
+dataByCode <- dplyr::filter(NCCwide, NCCwide$LocCode %in% validLocs) %>%
+    split(., .$LocCode)
 
 for (i in seq_along(dataByCode)) {
     dataByCode[[i]] <- dataByCode[[i]][dataByCode[[i]]$ID %in%
