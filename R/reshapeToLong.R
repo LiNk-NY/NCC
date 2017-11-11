@@ -131,7 +131,8 @@ drug <- readr::read_csv("data/drugVars.csv")
 NCClong <- left_join(FullNCC, drug, by = "ID")
 
 NCClong <- NCClong %>% mutate(IDLOC = paste0(ID, "_", LocCode)) %>%
-    select(ID, LocCode, IDLOC, everything())
+    select(ID, LocCode, IDLOC, everything()) %>%
+    mutate_at(vars(drug), function(x) case_when(x == 2 ~ 0, TRUE ~ 1))
 
 ## Replace wide dataset
 # readr::write_csv(NCClong, "data/NCClong.csv")
