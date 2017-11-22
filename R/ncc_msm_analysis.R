@@ -38,6 +38,9 @@ cleanLocationDF <- function(datframe) {
 }
 
 ncc <- dplyr::bind_rows(lapply(split(ncc, ncc[["IDLOC"]]), cleanLocationDF))
+ncc$Parenchymal <- dplyr::recode(ncc$Tissue, "Parenchymal" = "Yes", .default = "No")
+## Recode non-parenchymal regions as "No"
+ncc$Parenchymal[is.na(ncc$Parenchymal)] <- "No"
 
 statetable.msm(STATUS, IDLOC, data=subset(ncc, STATUS!=99))
 
@@ -93,14 +96,17 @@ hm.boot <- BiocParallel::bplapply(seq_len(B), function(x) {
         }, x = tt)
     })
     fit <- msm(STATUS ~ MONTH, subject = bootid, data = ncc.boot, censor = 99,
-        censor.states = c(2, 3, 4), qmatrix = Q.ini,  covariates = ~ drug)
+        censor.states = c(2, 3, 4), qmatrix = Q.ini,
+        covariates = ~ drug * Parenchymal)
     hm <- hazard.msm(fit)
-    hm[["drug"]][, "HR"]
+    lapply(hm, function(x) x[, "HR"])
 }, BPPARAM = MulticoreParam())
 })
 
-# rbind all results
-hm.boot <- do.call(rbind, hm.boot)
+HRs <- vector("list", 3L)
+for (i in seq_along(hm.boot)) {
+    HRs[[i]] <- do.call(rbind, hm.boot[[i]])
+}
 
 my.quantile <- function(x){
    quantile(x, probs = c(0.025, 0.975))
