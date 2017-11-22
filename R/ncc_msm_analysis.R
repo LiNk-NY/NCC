@@ -9,6 +9,9 @@
 
 library(msm)
 library(dplyr)
+## For installation, run the following:
+# source("https://bioconductor.org/biocLite.R")
+# BiocInstaller::biocLite("BiocParallel")
 library(BiocParallel)
 
 fullData <- read.csv("data/NCClong.csv", header=TRUE)
@@ -49,11 +52,8 @@ Q <- rbind(
     c(0,    0,    0,    0)
 )
 
-Q
-
 Q.ini <- crudeinits.msm(STATUS ~ MONTH, IDLOC, data = ncc, qmatrix = Q,
     censor = 99, censor.states=c(2,3,4))
-Q.ini
 
 ###########################
 # hazard ratio estimation #
@@ -93,7 +93,7 @@ hm.boot <- BiocParallel::bplapply(seq_len(B), function(x) {
         }, x = tt)
     })
     fit <- msm(STATUS ~ MONTH, subject = bootid, data = ncc.boot, censor = 99,
-        censor.states = c(2,3,4), qmatrix = Q.ini,  covariates = ~ drug)
+        censor.states = c(2, 3, 4), qmatrix = Q.ini,  covariates = ~ drug)
     hm <- hazard.msm(fit)
     hm[["drug"]][, "HR"]
 }, BPPARAM = MulticoreParam())
