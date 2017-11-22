@@ -2,6 +2,8 @@
 
 Neurocysticercosis Project
 
+https://github.com/LiNk-NY/NCC
+
 # Instructions for Reproducibility
 
 1. Please run the `R/loadPackages.R` script interactively. Please make sure
@@ -25,8 +27,13 @@ format.
 5. Run the `R/validation.R` script for obtaining some helper functions to
 validate and recode the data.
 
-6. Open `R/analyzeNCC.R` and run the analysis interactively. Please note, this
-script will source the previous scripts.
+6. Open `R/reshapeToLong.R` and run the script to change the data from wide
+to long format. Please note, this script will source the previous scripts.
+This is useful if you have already saved the wide format `rds` file previously.
+
+7. Open the `R/ncc_msm_analysis.R` script and run the analysis interactively.
+Please note that `BiocParallel` is a Bioconductor package and should be
+be installed as indicated in the script.
 
 # Issues
 
