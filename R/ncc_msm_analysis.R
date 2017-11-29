@@ -9,6 +9,8 @@
 
 library(msm)
 library(dplyr)
+library(abind)
+
 ## For installation, run the following:
 # source("https://bioconductor.org/biocLite.R")
 # BiocInstaller::biocLite("BiocParallel")
@@ -108,13 +110,17 @@ for (i in seq_along(hm.boot)) {
     HRs[[i]] <- do.call(rbind, hm.boot[[i]])
 }
 
-my.quantile <- function(x){
-   quantile(x, probs = c(0.025, 0.975))
-}
+HRarray <- sapply(HRs, function(x) {x}, simplify = "array")
+HRresult <- t(apply(HRarray, 1:2, median))
 
-hm.median <- apply(hm.boot, 2, median)
-hm.CI    <- apply(hm.boot, 2, function(x) my.quantile(x))
-t(rbind(hm.median, hm.CI))
+HR.ci <- apply(HRarray, 1:2, function(x)
+   quantile(x, probs = c(0.025, 0.975))
+)
+
+modelRes <- abind(HR = t(HRresult), aperm(HR.ci, c(2, 1, 3)), along = 2L)
+
+# save(modelRes, file = "data/modelRes.Rda")
+# load("data/modelRes.Rda")
 
 #############################
 # plot the survival curve   #
