@@ -126,12 +126,12 @@ modelRes <- abind(HR = t(HRresult), aperm(HR.ci, c(2, 1, 3)), along = 2L)
 # plot the survival curve   #
 #############################
 
- par(mfrow=c(1,2))
- plot(fit0, covariate = list(1), legend.pos=c(10,1),
-         xlab="Time after starting of the trial (in month)", las=1)
- title("Treatment Group")
+par(mfrow=c(1,2))
+plot(fit0, covariate = list(1), legend.pos=c(10,1),
+        xlab="Time after starting of the trial (in month)", las=1)
+title("Treatment Group")
 
- plot(fit0, covariate = list(0), legend.pos=c(10,1),
-         xlab="Time after starting of the trial (in month)", las=1)
- title("Placebo Group")
+plot(fit0, covariate = list(0), legend.pos=c(10,1),
+        xlab="Time after starting of the trial (in month)", las=1)
+title("Placebo Group")
 
