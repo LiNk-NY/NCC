@@ -92,10 +92,7 @@ validCystMatrix(regionID[[1L]][[1]])
 
 ## Get IDs that have a valid matrix
 validIDs <- lapply(regionID, function(reg) {
-    names(Filter(isTRUE, vapply(reg,
-        function(x) {
-            validCystMatrix(x)
-            }, logical(1L))))
+    names(Filter(isTRUE, vapply(reg, validCystMatrix, logical(1L))))
     })
 
 IDbyRegion <- Filter(length, validIDs)
