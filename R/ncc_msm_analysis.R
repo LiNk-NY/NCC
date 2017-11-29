@@ -116,8 +116,9 @@ HRresult <- t(apply(HRarray, 1:2, median))
 HR.ci <- apply(HRarray, 1:2, function(x)
    quantile(x, probs = c(0.025, 0.975))
 )
+HR.ci <- aperm(HR.ci, c(2, 1, 3))
 
-modelRes <- abind(HR = t(HRresult), aperm(HR.ci, c(2, 1, 3)), along = 2L)
+modelRes <- abind(HR = t(HRresult), HR.ci, along = 2L)
 
 # save(modelRes, file = "data/modelRes.Rda")
 # load("data/modelRes.Rda")
