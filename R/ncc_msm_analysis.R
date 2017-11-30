@@ -47,8 +47,8 @@ ncc$Parenchymal[is.na(ncc$Parenchymal)] <- "No"
 statetable.msm(STATUS, IDLOC, data=subset(ncc, STATUS!=99))
 
 sum(statetable.msm(STATUS,IDLOC, data=subset(ncc, STATUS!=99)) )
-(treated <- statetable.msm(STATUS,IDLOC, data=subset(ncc, STATUS!= 99 & drug==1)))
-(placebo <- statetable.msm(STATUS,IDLOC, data=subset(ncc, STATUS!= 99 & drug==0)))
+(treated <- statetable.msm(STATUS, IDLOC, data=subset(ncc, STATUS!= 99 & drug==1)))
+(placebo <- statetable.msm(STATUS, IDLOC, data=subset(ncc, STATUS!= 99 & drug==0)))
 
 Q <- rbind(
     c(0, 0.25,    0, 0.25),
