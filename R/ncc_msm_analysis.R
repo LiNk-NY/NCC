@@ -16,7 +16,7 @@ library(abind)
 # BiocInstaller::biocLite("BiocParallel")
 library(BiocParallel)
 
-fullData <- read.csv("data/NCClong.csv", header=TRUE)
+fullData <- read.csv("data/NCClong.csv", header=TRUE, stringsAsFactors = FALSE)
 ncc <- fullData %>% select(ID:STATUS, drug) %>% arrange(ID, LocCode, MONTH)
 
 cleanLocationDF <- function(datframe) {
