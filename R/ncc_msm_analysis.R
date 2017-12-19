@@ -44,9 +44,19 @@ ncc$Parenchymal <- dplyr::recode(ncc$Tissue, "Parenchymal" = "Yes", .default = "
 ## Recode non-parenchymal regions as "No"
 ncc$Parenchymal[is.na(ncc$Parenchymal)] <- "No"
 
+## minimum number of recorded visits
+group_by(ncc, ID) %>% summarise(nMonth = n_distinct(MONTH)) %>% select(nMonth) %>% min
+group_by(ncc, ID) %>% summarize(dislv = sum(STATUS == 4), dlogic = sum(dislv != 0L)) %>%
+    summarize(ndislv = sum(dlogic))
+round(101/117 * 100, 2)
+filter(ncc, MONTH == 0L) %>% group_by(ID) %>%
+    summarize(activ = sum(STATUS == 1L)) %>%
+    summarize(n1cysts = sum(activ >= 1L))
+round(62/117 * 100, 2)
+
 statetable.msm(STATUS, IDLOC, data=subset(ncc, STATUS!=99))
 
-sum(statetable.msm(STATUS,IDLOC, data=subset(ncc, STATUS!=99)) )
+sum(statetable.msm(STATUS,IDLOC, data=subset(ncc, STATUS!=99)))
 (treated <- statetable.msm(STATUS, IDLOC, data=subset(ncc, STATUS!= 99 & drug==1)))
 (placebo <- statetable.msm(STATUS, IDLOC, data=subset(ncc, STATUS!= 99 & drug==0)))
 
@@ -119,6 +129,7 @@ HR.ci <- apply(HRarray, 1:2, function(x)
 HR.ci <- aperm(HR.ci, c(2, 1, 3))
 
 modelRes <- abind(HR = t(HRresult), HR.ci, along = 2L)
+modelRes <- aperm(modelRes, c(3, 2, 1))
 
 # save(modelRes, file = "data/modelRes.Rda")
 # load("data/modelRes.Rda")
