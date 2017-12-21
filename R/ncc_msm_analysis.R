@@ -134,16 +134,39 @@ modelRes <- aperm(modelRes, c(3, 2, 1))
 # save(modelRes, file = "data/modelRes.Rda")
 # load("data/modelRes.Rda")
 
+resultTable1 <- do.call(cbind,
+lapply(c(Albendazole = 1, Parenchymal = 2), function(g)
+    apply(round(modelRes[, , g], 2), 1L, function(x)
+        paste(x[1], paste0("(", paste(x[2:3], collapse = "-"), ")")))
+    )
+)
+
+stateChanges <- gsub("State 1", "Active", rownames(resultTable1), fixed = TRUE) %>%
+    gsub("State 2", "Transitional", ., fixed = TRUE) %>%
+    gsub("State 3", "Inactive", ., fixed = TRUE) %>%
+    gsub("State 4", "Calcified", ., fixed = TRUE)
+
+rownames(resultTable1) <- stateChanges
+
+write.csv(resultTable1, "data/resultTable1.csv")
+
+
 #############################
 # plot the survival curve   #
 #############################
 
 par(mfrow=c(1,2))
-plot(fit0, covariate = list(1), legend.pos=c(10,1),
-        xlab="Time after starting of the trial (in month)", las=1)
+plot(fit0, covariate = list(1), show.legend = FALSE,
+        xlab="Time after trial start (months)", las=1)
+legend(x = 8, y = 1,
+    legend = paste("From state", c("Active", "Transitional", "Inactive")),
+    cex = 0.9, lty = seq(4-1), col = rainbow(3), lwd = 1)
 title("Treatment Group")
 
-plot(fit0, covariate = list(0), legend.pos=c(10,1),
-        xlab="Time after starting of the trial (in month)", las=1)
+plot(fit0, covariate = list(0), show.legend = FALSE,
+        xlab="Time after trial start (months)", las=1)
+legend(x = 8, y = 1,
+    legend = paste("From state", c("Active", "Transitional", "Inactive")),
+    cex = 0.9, lty = seq(4-1), col = rainbow(3), lwd = 1)
 title("Placebo Group")
 
