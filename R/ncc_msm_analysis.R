@@ -54,7 +54,7 @@ filter(ncc, MONTH == 0L) %>% group_by(ID) %>%
     summarize(n1cysts = sum(activ >= 1L))
 round(62/117 * 100, 2)
 
-statetable.msm(STATUS, IDLOC, data=subset(ncc, STATUS!=99))
+txsit <- statetable.msm(STATUS, IDLOC, data=subset(ncc, STATUS!=99))
 
 sum(statetable.msm(STATUS,IDLOC, data=subset(ncc, STATUS!=99)))
 (treated <- statetable.msm(STATUS, IDLOC, data=subset(ncc, STATUS!= 99 & drug==1)))
@@ -137,7 +137,7 @@ modelRes <- aperm(modelRes, c(3, 2, 1))
 resultTable1 <- do.call(cbind,
 lapply(c(Albendazole = 1, Parenchymal = 2), function(g)
     apply(round(modelRes[, , g], 2), 1L, function(x)
-        paste(x[1], paste0("(", paste(x[2:3], collapse = "-"), ")")))
+        paste(x[1], paste0("(", paste(x[2:3], collapse = " - "), ")")))
     )
 )
 
@@ -148,8 +148,12 @@ stateChanges <- gsub("State 1", "Active", rownames(resultTable1), fixed = TRUE) 
 
 rownames(resultTable1) <- stateChanges
 
-write.csv(resultTable1, "data/resultTable1.csv")
+countstt <- c(txsit[1, 2], txsit[1, 4], txsit[2, 3], txsit[2, 4], txsit[3, 4])
+"n (%)" <- paste(countstt, paste0("(", round(countstt/sum(txsit) * 100, 1), ")"))
 
+resultTable1 <- cbind(`n (%)`, resultTable1)
+
+# write.csv(resultTable1, "data/resultTable1.csv")
 
 #############################
 # plot the survival curve   #
