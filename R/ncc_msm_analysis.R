@@ -159,14 +159,14 @@ par(mfrow=c(1,2))
 plot(fit0, covariate = list(1), show.legend = FALSE,
         xlab="Time after trial start (months)", las=1)
 legend(x = 8, y = 1,
-    legend = paste("From state", c("Active", "Transitional", "Inactive")),
+    legend = paste("From", c("Active", "Transitional", "Inactive")),
     cex = 0.9, lty = seq(4-1), col = rainbow(3), lwd = 1)
-title("Treatment Group")
+title("Albendazole Group")
 
 plot(fit0, covariate = list(0), show.legend = FALSE,
         xlab="Time after trial start (months)", las=1)
 legend(x = 8, y = 1,
-    legend = paste("From state", c("Active", "Transitional", "Inactive")),
+    legend = paste("From", c("Active", "Transitional", "Inactive")),
     cex = 0.9, lty = seq(4-1), col = rainbow(3), lwd = 1)
 title("Placebo Group")
 
