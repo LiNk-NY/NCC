@@ -143,8 +143,8 @@ lapply(c(Albendazole = 1, Parenchymal = 2), function(g)
 
 stateChanges <- gsub("State 1", "Active", rownames(resultTable1), fixed = TRUE) %>%
     gsub("State 2", "Transitional", ., fixed = TRUE) %>%
-    gsub("State 3", "Inactive", ., fixed = TRUE) %>%
-    gsub("State 4", "Calcified", ., fixed = TRUE)
+    gsub("State 3", "Calcified", ., fixed = TRUE) %>%
+    gsub("State 4", "Dissolved", ., fixed = TRUE)
 
 rownames(resultTable1) <- stateChanges
 
@@ -163,14 +163,14 @@ par(mfrow=c(1,2))
 plot(fit0, covariate = list(1), show.legend = FALSE,
         xlab="Time after trial start (months)", las=1)
 legend(x = 8, y = 1,
-    legend = paste("From", c("Active", "Transitional", "Inactive")),
+    legend = paste("From", c("Active", "Transitional", "Calcified")),
     cex = 0.9, lty = seq(4-1), col = rainbow(3), lwd = 1)
 title("Albendazole Group")
 
 plot(fit0, covariate = list(0), show.legend = FALSE,
         xlab="Time after trial start (months)", las=1)
 legend(x = 8, y = 1,
-    legend = paste("From", c("Active", "Transitional", "Inactive")),
+    legend = paste("From", c("Active", "Transitional", "Calcified")),
     cex = 0.9, lty = seq(4-1), col = rainbow(3), lwd = 1)
 title("Placebo Group")
 
