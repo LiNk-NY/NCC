@@ -18,9 +18,9 @@ stateChanges <- gsub("State 1", "Active", rownames(resultTable1), fixed = TRUE) 
 rownames(resultTable1) <- stateChanges
 
 countstt <- c(txsit[1, 2], txsit[1, 4], txsit[2, 3], txsit[2, 4], txsit[3, 4])
-"n (%)" <- paste(countstt, paste0("(", round(countstt/sum(txsit) * 100, 1), ")"))
+"No. of Events (%)" <- paste(countstt, paste0("(", round(countstt/sum(txsit) * 100, 1), ")"))
 
-resultTable1 <- cbind(`n (%)`, resultTable1)
+resultTable1 <- cbind(`No. of Events (%)`, resultTable1)
 
 # write.csv(resultTable1, "data/resultTable1.csv")
 
