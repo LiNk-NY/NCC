@@ -17,8 +17,12 @@ stateChanges <- gsub("State 1", "Active", rownames(resultTable1), fixed = TRUE) 
 
 rownames(resultTable1) <- stateChanges
 
+offtx <- txsit
+diag(offtx) <- 0L
+offdgsum <- sum(offtx)
+
 countstt <- c(txsit[1, 2], txsit[1, 4], txsit[2, 3], txsit[2, 4], txsit[3, 4])
-"No. of Events (%)" <- paste(countstt, paste0("(", round(countstt/sum(txsit) * 100, 1), ")"))
+"No. of Events (%)" <- paste(countstt, paste0("(", round(countstt/offdgsum * 100, 1), ")"))
 
 resultTable1 <- cbind(`No. of Events (%)`, resultTable1)
 
