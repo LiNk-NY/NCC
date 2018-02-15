@@ -1,4 +1,3 @@
-#
 # Fitting NCC data using R's msm package with bootstrap
 # on correlated data
 #
@@ -10,56 +9,25 @@
 library(msm)
 library(dplyr)
 library(abind)
+library(readr)
 
 ## For installation, run the following:
 # source("https://bioconductor.org/biocLite.R")
 # BiocInstaller::biocLite("BiocParallel")
 library(BiocParallel)
 
-fullData <- read.csv("data/NCClong.csv", header=TRUE, stringsAsFactors = FALSE)
-ncc <- fullData %>% select(ID:STATUS, drug) %>% arrange(ID, LocCode, MONTH)
-
-cleanLocationDF <- function(datframe) {
-    stat4 <- datframe[["STATUS"]] == 4L
-    if (any(stat4, na.rm = TRUE)) {
-    datframe <- datframe[seq_len(which.max(stat4)), ]
-    datframe <- datframe[!is.na(datframe[["STATUS"]]), ]
-    }
-    nas <- is.na(datframe[["STATUS"]])
-    if (any(nas)) {
-        restNA <- identical(which(nas), seq(which.max(nas), length(nas)))
-        if (restNA) {
-            datframe[["STATUS"]][which.max(nas)] <- 99L
-        } else {
-            if (sum(nas) > 1L) {
-            datframe[["STATUS"]][6L - which.max(rev(nas))] <- 99L
-            }
-        }
-    }
-    datframe[!is.na(datframe[["STATUS"]]), ]
-}
-
-ncc <- dplyr::bind_rows(lapply(split(ncc, ncc[["IDLOC"]]), cleanLocationDF))
-ncc$Parenchymal <- dplyr::recode(ncc$Tissue, "Parenchymal" = "Yes", .default = "No")
-## Recode non-parenchymal regions as "No"
-ncc$Parenchymal[is.na(ncc$Parenchymal)] <- "No"
-
-## minimum number of recorded visits
-group_by(ncc, ID) %>% summarise(nMonth = n_distinct(MONTH)) %>% select(nMonth) %>% min
-group_by(ncc, ID) %>% summarize(dislv = sum(STATUS == 4), dlogic = sum(dislv != 0L)) %>%
-    summarize(ndislv = sum(dlogic))
-round(101/117 * 100, 2)
-filter(ncc, MONTH == 0L) %>% group_by(ID) %>%
-    summarize(activ = sum(STATUS == 1L)) %>%
-    summarize(n1cysts = sum(activ >= 1L))
-round(62/117 * 100, 2)
+ncc <- read_csv("data/NCCstatus.csv")
 
 txsit <- statetable.msm(STATUS, IDLOC, data=subset(ncc, STATUS!=99))
 # save(txsit, file = "data/statetable.Rda")
 
+## Total number of transition and consistent states
 sum(statetable.msm(STATUS,IDLOC, data=subset(ncc, STATUS!=99)))
-(treated <- statetable.msm(STATUS, IDLOC, data=subset(ncc, STATUS!= 99 & drug==1)))
-(placebo <- statetable.msm(STATUS, IDLOC, data=subset(ncc, STATUS!= 99 & drug==0)))
+
+(treated <- statetable.msm(STATUS, IDLOC,
+    data=subset(ncc, STATUS!= 99 & drug==1)))
+(placebo <- statetable.msm(STATUS, IDLOC,
+    data=subset(ncc, STATUS!= 99 & drug==0)))
 
 Q <- rbind(
     c(0, 0.25,    0, 0.25),
@@ -95,7 +63,7 @@ split_ncc <- split(ncc, ncc$ID)
 
 set.seed(123)
 system.time({
-hm.boot <- BiocParallel::bplapply(seq_len(B), function(x) {
+hm.boot0 <- BiocParallel::bplapply(seq_len(B), function(x) {
     # it's important to specify replace=TRUE for bootstrapping
     bt.ids <- sample(ids, N, replace=TRUE)
     ncc.boot <- dplyr::bind_rows({
@@ -117,8 +85,8 @@ hm.boot <- BiocParallel::bplapply(seq_len(B), function(x) {
 })
 
 HRs <- vector("list", 3L)
-for (i in seq_along(hm.boot)) {
-    HRs[[i]] <- do.call(rbind, hm.boot[[i]])
+for (i in seq_along(hm.boot0)) {
+    HRs[[i]] <- do.call(rbind, hm.boot0[[i]])
 }
 
 HRarray <- sapply(HRs, function(x) {x}, simplify = "array")
