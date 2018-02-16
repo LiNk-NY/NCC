@@ -82,7 +82,7 @@ hm.boot1 <- BiocParallel::bplapply(seq_len(B), function(x) {
             x[[i]]
         }, x = tt)
     })
-    fit <- msm(STATUS ~ MONTH, subject = IDLOC, data = ncc, censor = 99,
+    fit <- msm(STATUS ~ MONTH, subject = bootid, data = ncc.boot, censor = 99,
         censor.states = c(2,3,4), qmatrix = Q.ini,
         covariates = ~ drug * Parenchymal)
 
@@ -104,35 +104,24 @@ HR.ci <- apply(HRarray, 1:2, function(x)
 )
 HR.ci <- aperm(HR.ci, c(2, 1, 3))
 
-modelRes <- abind(HR = t(HRresult), HR.ci, along = 2L)
-modelRes <- aperm(modelRes, c(3, 2, 1))
+interRes <- abind(HR = t(HRresult), HR.ci, along = 2L)
+interRes <- aperm(interRes, c(3, 2, 1))
 
-
-### Modify here
-### TODO
-res <- hazard.msm(fit1)
-is.list(res)
-names(res)
-
-beta.drug.x <- log(res$drug.x[,1])
-
-beta.loc <- log(res$loc[,1])
-
-beta.drug.x.loc <- log(res$`drug.x:loc`[,1])
+# save(interRes, file = "data/interaction.Rda")
 
 # hazard for drug.x = 1, and loc = 1
-hazardA <- exp(beta.drug.x + beta.loc + beta.drug.x.loc)
+hazardA <- exp(rowSums(log(interRes[, "HR", ])))
 # note I did not include the baseline beta since it will
 #be cancelled anyway
 
 # hazard for drug.x = 0, and loc = 1
-hazardB <- exp(0 + beta.loc + 0)
+hazardB <- exp(0 + log(interRes[, "HR", "Parenchymal"]) + 0)
 
 # hazard ratio (treatment vs. placebo ) for loc = 1
 HR.loc1 <- hazardA/hazardB
 
 # hazard for drug.x = 1, and loc = 0
-hazardC <- exp(beta.drug.x + 0 + 0)
+hazardC <- exp(interRes[, "HR", "drug"] + 0 + 0)
 
 # hazard for drug.x = 0, and loc = 0
 hazardD <- exp(0 + 0 + 0)
@@ -143,6 +132,7 @@ HR.loc0 <- hazardC/hazardD
 # put results together
 (interaction.loc <- t(rbind(HR.loc0, HR.loc1)))
 
+## TODO
 # readin the patient info data
 patinfo <- read_spss("patinfo.sav")
 names(patinfo)
