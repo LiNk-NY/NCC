@@ -112,7 +112,7 @@ HR.ci <- aperm(HR.ci, c(2, 1, 3))
 drugsexint <- abind(HR = t(HRresult), HR.ci, along = 2L)
 drugsexint <- aperm(drugsexint, c(3, 2, 1))
 
-save(drugsexint, file = "data/drugsexint.Rda")
+save(drugsexint, file = "data/interactions/drugsexint.Rda")
 
 # hazard for drug.x = 1, and loc = 1
 hazardA <- exp(rowSums(log(drugsexint[, "HR", ])))
