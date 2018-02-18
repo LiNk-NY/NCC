@@ -1,4 +1,4 @@
-## Interaction analysis DRUG X PARENCHYMAL LOCATION
+## Interaction analysis DRUG by SEX
 # Fitting NCC data using R's msm package with bootstrap
 # on correlated data
 #
@@ -12,25 +12,12 @@ library(dplyr)
 library(abind)
 library(readr)
 library(haven)
-
 ## For installation, run the following:
 # source("https://bioconductor.org/biocLite.R")
 # BiocInstaller::biocLite("BiocParallel")
 library(BiocParallel)
 
 ncc <- read_csv("data/NCCstatus.csv")
-
-txsit <- statetable.msm(STATUS, IDLOC, data=subset(ncc, STATUS!=99))
-# save(txsit, file = "data/statetable.Rda")
-
-## Total number of transition and consistent states
-sum(statetable.msm(STATUS,IDLOC, data=subset(ncc, STATUS!=99)))
-
-(treated <- statetable.msm(STATUS, IDLOC,
-    data=subset(ncc, STATUS!= 99 & drug==1)))
-
-(placebo <- statetable.msm(STATUS, IDLOC,
-    data=subset(ncc, STATUS!= 99 & drug==0)))
 
 Q <- rbind(
     c(0, 0.25,    0, 0.25),
@@ -56,6 +43,22 @@ Q.ini <- crudeinits.msm(STATUS ~ MONTH, IDLOC, data = ncc, qmatrix = Q,
 # hazard ratio estimation #
 ###########################
 
+# DRUG X SEX -------------------------------------------------------------
+
+# readin the patient info data
+# file.rename("data/Adult & Pediatric Patient Information Form August162004.sav", "data/patinfo.sav")
+patinfo <- read_spss("data/patinfo.sav")
+
+age.raw <- as.numeric((patinfo$PIADATE - patinfo$PIA3)/365)
+
+age <- ifelse(age.raw > 40, 1, 0)
+
+male <- ifelse(patinfo$PIA2 == 1, 1, 0);
+
+sub.patinfo <- data.frame(cbind(ID = patinfo$ID, age, male))
+
+ncc <- merge(ncc, sub.patinfo, by="ID")
+
 # note, above fitting assumes independence among patients with multiple
 # locations. To correct that, we use the bootstrap method
 
@@ -69,7 +72,7 @@ ids <- unique(ncc$ID)
 N   <- length(ids)
 split_ncc <- split(ncc, ncc$ID)
 
-set.seed(123)
+set.seed(213)
 system.time({
 hm.boot <- BiocParallel::bplapply(seq_len(B), function(x) {
     # it's important to specify replace=TRUE for bootstrapping
@@ -106,30 +109,30 @@ HR.ci <- apply(HRarray, 1:2, function(x)
 )
 HR.ci <- aperm(HR.ci, c(2, 1, 3))
 
-druglocint <- abind(HR = t(HRresult), HR.ci, along = 2L)
-druglocint <- aperm(druglocint, c(3, 2, 1))
+drugsexint <- abind(HR = t(HRresult), HR.ci, along = 2L)
+drugsexint <- aperm(drugsexint, c(3, 2, 1))
 
-save(druglocint, file = "data/interaction.Rda")
+# save(drugsexint, file = "data/interaction.Rda")
 
 # hazard for drug.x = 1, and loc = 1
-hazardA <- exp(rowSums(log(druglocint[, "HR", ])))
+hazardA <- exp(rowSums(log(drugsexint[, "HR", ])))
 # note I did not include the baseline beta since it will
 #be cancelled anyway
 
 # hazard for drug.x = 0, and loc = 1
-hazardB <- exp(0 + log(druglocint[, "HR", "Parenchymal"]) + 0)
+hazardB <- exp(0 + log(drugsexint[, "HR", "male"]) + 0)
 
 # hazard ratio (treatment vs. placebo ) for loc = 1
-HR.loc1 <- hazardA/hazardB
+HR.male1 <- hazardA/hazardB
 
 # hazard for drug.x = 1, and loc = 0
-hazardC <- exp(druglocint[, "HR", "drug"] + 0 + 0)
+hazardC <- exp(drugsexint[, "HR", "drug"] + 0 + 0)
 
 # hazard for drug.x = 0, and loc = 0
 hazardD <- exp(0 + 0 + 0)
 
 # hazard ratio (treatment vs. placebo ) for group = 1
-HR.loc0 <- hazardC/hazardD
+HR.male0 <- hazardC/hazardD
 
 # put results together
-(interaction.loc <- t(rbind(HR.loc0, HR.loc1)))
+(interaction.loc <- t(rbind(HR.male0, HR.male1)))
