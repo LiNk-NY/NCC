@@ -135,4 +135,4 @@ hazardD <- exp(0 + 0 + 0)
 HR.age0 <- hazardC/hazardD
 
 # put results together
-(interaction.loc <- t(rbind(HR.age0, HR.age1)))
+(interaction.age <- t(rbind(HR.age0, HR.age1)))
