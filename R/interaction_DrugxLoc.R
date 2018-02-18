@@ -12,25 +12,12 @@ library(dplyr)
 library(abind)
 library(readr)
 library(haven)
-
 ## For installation, run the following:
 # source("https://bioconductor.org/biocLite.R")
 # BiocInstaller::biocLite("BiocParallel")
 library(BiocParallel)
 
 ncc <- read_csv("data/NCCstatus.csv")
-
-txsit <- statetable.msm(STATUS, IDLOC, data=subset(ncc, STATUS!=99))
-# save(txsit, file = "data/statetable.Rda")
-
-## Total number of transition and consistent states
-sum(statetable.msm(STATUS,IDLOC, data=subset(ncc, STATUS!=99)))
-
-(treated <- statetable.msm(STATUS, IDLOC,
-    data=subset(ncc, STATUS!= 99 & drug==1)))
-
-(placebo <- statetable.msm(STATUS, IDLOC,
-    data=subset(ncc, STATUS!= 99 & drug==0)))
 
 Q <- rbind(
     c(0, 0.25,    0, 0.25),

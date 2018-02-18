@@ -12,7 +12,6 @@ library(dplyr)
 library(abind)
 library(readr)
 library(haven)
-
 ## For installation, run the following:
 # source("https://bioconductor.org/biocLite.R")
 # BiocInstaller::biocLite("BiocParallel")
@@ -20,7 +19,6 @@ library(BiocParallel)
 
 ncc <- read_csv("data/NCCstatus.csv")
 
-## Total number of transition and consistent states
 Q <- rbind(
     c(0, 0.25,    0, 0.25),
     c(0,    0, 0.25, 0.25),
@@ -41,7 +39,12 @@ Q.ini <- crudeinits.msm(STATUS ~ MONTH, IDLOC, data = ncc, qmatrix = Q,
 #  refer to tutorial for details#
 #################################
 
+###########################
+# hazard ratio estimation #
+###########################
+
 # Drug X Age --------------------------------------------------------------
+
 # readin the patient info data
 # file.rename("data/Adult & Pediatric Patient Information Form August162004.sav", "data/patinfo.sav")
 patinfo <- read_spss("data/patinfo.sav")
@@ -55,11 +58,6 @@ male <- ifelse(patinfo$PIA2 == 1, 1, 0);
 sub.patinfo <- data.frame(cbind(ID = patinfo$ID, age, male))
 
 ncc <- merge(ncc, sub.patinfo, by="ID")
-
-
-###########################
-# hazard ratio estimation #
-###########################
 
 # note, above fitting assumes independence among patients with multiple
 # locations. To correct that, we use the bootstrap method
