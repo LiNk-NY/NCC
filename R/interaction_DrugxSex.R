@@ -89,7 +89,7 @@ hm.boot <- BiocParallel::bplapply(seq_len(B), function(x) {
     })
     fit <- msm(STATUS ~ MONTH, subject = bootid, data = ncc.boot, censor = 99,
         censor.states = c(2,3,4), qmatrix = Q.ini,
-        covariates = ~ drug * Parenchymal)
+        covariates = ~ drug * male)
 
     hm <- hazard.msm(fit)
     lapply(hm, function(x) x[, "HR"])
