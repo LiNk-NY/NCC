@@ -20,13 +20,14 @@ rownames(resultTable1) <- stateChanges
 offtx <- txsit
 diag(offtx) <- 0L
 offdgsum <- sum(offtx)
+## 203
 
 countstt <- c(txsit[1, 2], txsit[1, 4], txsit[2, 3], txsit[2, 4], txsit[3, 4])
 "No. of Events (%)" <- paste(countstt, paste0("(", round(countstt/offdgsum * 100, 1), ")"))
 
 resultTable1 <- cbind(`No. of Events (%)`, resultTable1)
 
-# write.csv(resultTable1, "data/resultTable1.csv")
+write.csv(resultTable1, "data/resultTable1.csv")
 
 #############################
 # plot the survival curve   #

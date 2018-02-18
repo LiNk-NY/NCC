@@ -100,4 +100,4 @@ HR.ci <- aperm(HR.ci, c(2, 1, 3))
 modelRes <- abind(HR = t(HRresult), HR.ci, along = 2L)
 modelRes <- aperm(modelRes, c(3, 2, 1))
 
-# save(modelRes, file = "data/modelRes.Rda")
+save(modelRes, file = "data/modelRes.Rda")
