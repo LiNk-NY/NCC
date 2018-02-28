@@ -46,7 +46,6 @@ Q.ini <- crudeinits.msm(STATUS ~ MONTH, IDLOC, data = ncc, qmatrix = Q,
 # Drug X Age --------------------------------------------------------------
 
 # readin the patient info data
-# file.rename("data/Adult & Pediatric Patient Information Form August162004.sav", "data/patinfo.sav")
 patinfo <- read_spss("data/patinfo.sav")
 
 age.raw <- as.numeric((patinfo$PIADATE - patinfo$PIA3)/365)
