@@ -29,7 +29,7 @@ for (i in seq_along(dataList)) {
 }
 
 drugVar <- dataList[[1]][, c("ID", "drug", "drug_gro")]
-# readr::write_csv(drugVar, "data/drugVars.csv")
+readr::write_csv(drugVar, "data/drugVars.csv")
 
 ## Remove extra variables
 dataList[[1]] <-
@@ -141,5 +141,5 @@ charVars <- vapply(NCCdf, is.character, logical(1L))
 NCCdf[, charVars] <- readr::type_convert(NCCdf[, charVars])
 
 ## Serialize and store data
-# readr::write_rds(NCCdf, path = "data/NCCwide.rds")
-# readr::write_csv(NCCdf, path = "data/NCCwide.csv")
+readr::write_rds(NCCdf, path = "data/NCCwide.rds")
+readr::write_csv(NCCdf, path = "data/NCCwide.csv")

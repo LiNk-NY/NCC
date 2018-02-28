@@ -30,7 +30,7 @@ ncc$Parenchymal <- dplyr::recode(ncc$Tissue, "Parenchymal" = "Yes", .default = "
 ## Recode non-parenchymal regions as "No"
 ncc$Parenchymal[is.na(ncc$Parenchymal)] <- "No"
 
-# readr::write_csv(ncc, "data/NCCstatus.csv")
+readr::write_csv(ncc, "data/NCCstatus.csv")
 
 # DESCRIPTIVES ------------------------------------------------------------
 

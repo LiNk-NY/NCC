@@ -132,5 +132,5 @@ NCClong <- NCClong %>% mutate(IDLOC = paste0(ID, "_", LocCode)) %>%
     mutate_at(vars(drug), function(x) case_when(x == 2 ~ 0, TRUE ~ 1))
 
 ## Replace wide dataset
-# readr::write_csv(NCClong, "data/NCClong.csv")
-# haven::write_sav(NCClong, "data/NCClong.sav")
+readr::write_csv(NCClong, "data/NCClong.csv")
+haven::write_sav(NCClong, "data/NCClong.sav")
