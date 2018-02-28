@@ -1,5 +1,6 @@
 ## source("https://bioconductor.org/biocLite.R")
 ## BiocInstaller::biocLite("IRanges")
+## BiocInstaller::biocLite("BiocParallel")
 
 suppressPackageStartupMessages({
     library(haven)
@@ -10,4 +11,7 @@ suppressPackageStartupMessages({
     library(purrr)
     library(tidyr)
     library(tibble)
+    library(msm)
+    library(abind)
+    library(BiocParallel)
 })
