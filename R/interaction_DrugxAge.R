@@ -68,7 +68,7 @@ B <- 1000
 
 # we get bootstrap from re-sampling on the patients
 ids <- unique(ncc$ID)
-N   <- length(ids)
+N <- length(ids)
 split_ncc <- split(ncc, ncc$ID)
 
 set.seed(321)
@@ -91,16 +91,23 @@ hm.boot <- BiocParallel::bplapply(seq_len(B), function(x) {
         covariates = ~ drug * age)
 
     hm <- hazard.msm(fit)
-    lapply(hm, function(x) x[, "HR"])
-}, BPPARAM = MulticoreParam())
+    beta.mat <- vapply(hm, function(x) log(x[, "HR"]), numeric(5L))
+
+    hazardA <- exp(rowSums(beta.mat))
+    hazardB <- exp(0 + beta.mat[, "age"] + 0)
+
+    HR.age1 <- hazardA/hazardB
+
+    hazardC <- exp(beta.mat[, "drug"] + 0 + 0)
+    hazardD <- exp(0 + 0 + 0)
+
+    HR.age0 <- hazardC/hazardD
+
+    cbind(HR.age0, HR.age1)
+    }, BPPARAM = MulticoreParam(workers = 20, RNGseed = 321))
 })
 
-HRs <- vector("list", 3L)
-for (i in seq_along(hm.boot)) {
-    HRs[[i]] <- do.call(rbind, hm.boot[[i]])
-}
-
-HRarray <- sapply(HRs, function(x) {x}, simplify = "array")
+HRarray <- sapply(hm.boot, function(x) {x}, simplify = "array")
 HRresult <- t(apply(HRarray, 1:2, median))
 
 HR.ci <- apply(HRarray, 1:2, function(x)
@@ -109,29 +116,5 @@ HR.ci <- apply(HRarray, 1:2, function(x)
 HR.ci <- aperm(HR.ci, c(2, 1, 3))
 
 drugageint <- abind(HR = t(HRresult), HR.ci, along = 2L)
-drugageint <- aperm(drugageint, c(3, 2, 1))
 
 save(drugageint, file = "data/interactions/drugageint.Rda")
-
-# hazard for drug.x = 1, and loc = 1
-hazardA <- exp(rowSums(log(drugageint[, "HR", ])))
-# note I did not include the baseline beta since it will
-#be cancelled anyway
-
-# hazard for drug.x = 0, and loc = 1
-hazardB <- exp(0 + log(drugageint[, "HR", "age"]) + 0)
-
-# hazard ratio (treatment vs. placebo ) for loc = 1
-HR.age1 <- hazardA/hazardB
-
-# hazard for drug.x = 1, and loc = 0
-hazardC <- exp(drugageint[, "HR", "drug"] + 0 + 0)
-
-# hazard for drug.x = 0, and loc = 0
-hazardD <- exp(0 + 0 + 0)
-
-# hazard ratio (treatment vs. placebo ) for group = 1
-HR.age0 <- hazardC/hazardD
-
-# put results together
-(interaction.age <- t(rbind(HR.age0, HR.age1)))
