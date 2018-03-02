@@ -53,7 +53,7 @@ B <- 1000
 
 # we get bootstrap from re-sampling on the patients
 ids <- unique(ncc$ID)
-N   <- length(ids)
+N <- length(ids)
 split_ncc <- split(ncc, ncc$ID)
 
 set.seed(123)
@@ -71,15 +71,15 @@ hm.boot <- BiocParallel::bplapply(seq_len(B), function(x) {
             x[[i]]
         }, x = tt)
     })
-    fit <- msm(STATUS ~ MONTH, subject = bootid, data = ncc.boot, censor = 99,
-        censor.states = c(2,3,4), qmatrix = Q.ini,
+    fit <- msm::msm(STATUS ~ MONTH, subject = bootid, data = ncc.boot,
+        censor = 99, censor.states = c(2,3,4), qmatrix = Q.ini,
         covariates = ~ drug * Parenchymal)
 
     hm <- hazard.msm(fit)
     beta.mat <- vapply(hm, function(x) log(x[, "HR"]), numeric(5L))
 
     hazardA <- exp(rowSums(beta.mat))
-    hazardB <- exp(0 + beta.mat[, "Parenchymal"] + 0)
+    hazardB <- exp(0 + beta.mat[, "ParenchymalYes"] + 0)
 
     HR.loc1 <- hazardA/hazardB
 
