@@ -81,7 +81,7 @@ hm.boot0 <- BiocParallel::bplapply(seq_len(B), function(x) {
         covariates = ~ drug + Parenchymal)
     hm <- hazard.msm(fit)
     lapply(hm, function(x) x[, "HR"])
-}, BPPARAM = MulticoreParam())
+}, BPPARAM = MulticoreParam(workers = 20, RNGseed = 123))
 })
 
 HRs <- vector("list", 3L)
