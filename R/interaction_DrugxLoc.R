@@ -89,8 +89,7 @@ hm.boot <- BiocParallel::bplapply(seq_len(B), function(x) {
     HR.loc0 <- hazardC/hazardD
 
     cbind(HR.loc0, HR.loc1)
-
-    }, BPPARAM = MulticoreParam(workers = 20, RNGseed = 123))
+    }, BPPARAM = MulticoreParam(workers = 20))
 })
 
 HRarray <- sapply(hm.boot, function(x) {x}, simplify = "array")
