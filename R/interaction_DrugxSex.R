@@ -92,16 +92,24 @@ hm.boot <- BiocParallel::bplapply(seq_len(B), function(x) {
         covariates = ~ drug * male)
 
     hm <- hazard.msm(fit)
-    lapply(hm, function(x) x[, "HR"])
-}, BPPARAM = MulticoreParam())
+    beta.mat <- vapply(hm, function(x) log(x[, "HR"]), numeric(5L))
+
+    hazardA <- exp(rowSums(beta.mat))
+    hazardB <- exp(0 + beta.mat[, "male"] + 0)
+
+    HR.male1 <- hazardA/hazardB
+
+    hazardC <- exp(beta.mat[, "drug"] + 0 + 0)
+    hazardD <- exp(0 + 0 + 0)
+
+    HR.male0 <- hazardC/hazardD
+
+    cbind(HR.male0, HR.male1)
+
+    }, BPPARAM = MulticoreParam(workers = 20, RNGseed = 213))
 })
 
-HRs <- vector("list", 3L)
-for (i in seq_along(hm.boot)) {
-    HRs[[i]] <- do.call(rbind, hm.boot[[i]])
-}
-
-HRarray <- sapply(HRs, function(x) {x}, simplify = "array")
+HRarray <- sapply(hm.boot, function(x) {x}, simplify = "array")
 HRresult <- t(apply(HRarray, 1:2, median))
 
 HR.ci <- apply(HRarray, 1:2, function(x)
@@ -109,30 +117,6 @@ HR.ci <- apply(HRarray, 1:2, function(x)
 )
 HR.ci <- aperm(HR.ci, c(2, 1, 3))
 
-drugsexint <- abind(HR = t(HRresult), HR.ci, along = 2L)
-drugsexint <- aperm(drugsexint, c(3, 2, 1))
+drugmaleint <- abind(HR = t(HRresult), HR.ci, along = 2L)
 
-save(drugsexint, file = "data/interactions/drugsexint.Rda")
-
-# hazard for drug.x = 1, and loc = 1
-hazardA <- exp(rowSums(log(drugsexint[, "HR", ])))
-# note I did not include the baseline beta since it will
-#be cancelled anyway
-
-# hazard for drug.x = 0, and loc = 1
-hazardB <- exp(0 + log(drugsexint[, "HR", "male"]) + 0)
-
-# hazard ratio (treatment vs. placebo ) for loc = 1
-HR.male1 <- hazardA/hazardB
-
-# hazard for drug.x = 1, and loc = 0
-hazardC <- exp(drugsexint[, "HR", "drug"] + 0 + 0)
-
-# hazard for drug.x = 0, and loc = 0
-hazardD <- exp(0 + 0 + 0)
-
-# hazard ratio (treatment vs. placebo ) for group = 1
-HR.male0 <- hazardC/hazardD
-
-# put results together
-(interaction.male <- t(rbind(HR.male0, HR.male1)))
+save(drugmaleint, file = "data/interactions/drugmaleint.Rda")
