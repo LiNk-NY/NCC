@@ -1,6 +1,11 @@
-## source("https://bioconductor.org/biocLite.R")
-## BiocInstaller::biocLite("IRanges")
-## BiocInstaller::biocLite("BiocParallel")
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+## These packages should be downloaded from Bioconductor
+## Uncomment and run these lines
+## BiocManager::install("IRanges")
+## BiocManager::install("BiocParallel")
+## Do the same with any other missing package, e.g.,
+## BiocManager::install("haven")
 
 suppressPackageStartupMessages({
     library(haven)
